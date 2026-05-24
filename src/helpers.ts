@@ -177,35 +177,62 @@ export function getNetworkLogo(network: string): TemplateResult {
   return html`<ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>`;
 }
 
+// Currencies the gasbuddy integration may report. Anything else falls back to USD.
+const KNOWN_CURRENCIES = new Set(['USD', 'CAD', 'EUR', 'GBP', 'AUD', 'MXN', 'JPY']);
+
 /**
- * Formats a fuel price.
+ * Parses a leading ISO-4217 currency code out of a unit_of_measurement
+ * like "USD/gallon" or "CAD/liter". Returns null when none is recognized.
  */
-export function formatPrice(price: unknown): string {
+export function parseCurrency(unitOfMeasurement?: string | null): string | null {
+  if (!unitOfMeasurement) return null;
+  const code = unitOfMeasurement.trim().slice(0, 3).toUpperCase();
+  return KNOWN_CURRENCIES.has(code) ? code : null;
+}
+
+/**
+ * Formats a fuel price. Derives the currency from the sensor's
+ * unit_of_measurement so non-USD users render correctly; defaults to USD.
+ */
+export function formatPrice(price: unknown, unitOfMeasurement?: string | null): string {
   if (price === undefined || price === null || price === 'unknown' || price === 'unavailable') {
     return '-';
   }
   const val = Number(price);
   if (isNaN(val)) return String(price);
 
-  // Return formatted price (e.g. $3.45)
+  const currency = parseCurrency(unitOfMeasurement) ?? 'USD';
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
-    currency: 'USD',
+    currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 3,
   }).format(val);
 }
 
 /**
- * Formats a distance value.
+ * Formats a distance value. The gasbuddy integration always reports miles
+ * via the `distance_miles` attribute, so we convert to km when the user's
+ * HA unit system is metric.
  */
-export function formatDistance(distance: unknown): string {
-  if (distance === undefined || distance === null || distance === 'unknown' || distance === 'unavailable') {
+export function formatDistance(distanceMiles: unknown, hass?: HomeAssistant): string {
+  if (
+    distanceMiles === undefined ||
+    distanceMiles === null ||
+    distanceMiles === 'unknown' ||
+    distanceMiles === 'unavailable'
+  ) {
     return '';
   }
-  const val = Number(distance);
-  if (isNaN(val)) return String(distance);
-  return `${val.toFixed(1)} mi`;
+  const miles = Number(distanceMiles);
+  if (isNaN(miles)) return String(distanceMiles);
+
+  const lengthUnit = hass?.config?.unit_system?.length;
+  if (lengthUnit === 'km') {
+    const km = miles * 1.609344;
+    return `${km.toFixed(1)} km`;
+  }
+  return `${miles.toFixed(1)} mi`;
 }
 
 /**
