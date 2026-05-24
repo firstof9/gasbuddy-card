@@ -1,4 +1,4 @@
-import { LitElement, html, type TemplateResult } from 'lit';
+import { LitElement, html, type TemplateResult, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { GasBuddyCardConfig, HomeAssistant } from './types.js';
 import { cardStyles } from './styles.js';
@@ -35,6 +35,68 @@ export class GasBuddyCard extends LitElement {
 
   public getCardSize(): number {
     return 4;
+  }
+
+  protected override shouldUpdate(changedProperties: PropertyValues): boolean {
+    if (changedProperties.has('_config') || changedProperties.has('_activeTab')) {
+      return true;
+    }
+
+    if (changedProperties.has('hass')) {
+      const oldHass = changedProperties.get('hass') as HomeAssistant | undefined;
+      if (!oldHass || !this.hass || !this._config) {
+        return true;
+      }
+
+      const deviceId = this._config.device_id;
+      if (!deviceId) return true;
+
+      const discovered = findDeviceEntities(this.hass, deviceId);
+      const entities = [
+        this._config.regular_gas_entity || discovered.regular_gas,
+        this._config.midgrade_gas_entity || discovered.midgrade_gas,
+        this._config.premium_gas_entity || discovered.premium_gas,
+        this._config.diesel_entity || discovered.diesel,
+        this._config.regular_gas_cash_entity || discovered.regular_gas_cash,
+        this._config.midgrade_gas_cash_entity || discovered.midgrade_gas_cash,
+        this._config.premium_gas_cash_entity || discovered.premium_gas_cash,
+        this._config.diesel_cash_entity || discovered.diesel_cash,
+        this._config.e85_entity || discovered.e85,
+        this._config.e85_cash_entity || discovered.e85_cash,
+        this._config.e15_entity || discovered.e15,
+        this._config.e15_cash_entity || discovered.e15_cash,
+        this._config.last_updated_entity || discovered.last_updated,
+        this._config.ev_level1_entity || discovered.ev_level1,
+        this._config.ev_level2_entity || discovered.ev_level2,
+        this._config.ev_dc_fast_entity || discovered.ev_dc_fast,
+        this._config.ev_j1772_entity || discovered.ev_j1772,
+        this._config.ev_j1772_power_entity || discovered.ev_j1772_power,
+        this._config.ev_ccs_entity || discovered.ev_ccs,
+        this._config.ev_ccs_power_entity || discovered.ev_ccs_power,
+        this._config.ev_chademo_entity || discovered.ev_chademo,
+        this._config.ev_chademo_power_entity || discovered.ev_chademo_power,
+        this._config.ev_nacs_entity || discovered.ev_nacs,
+        this._config.ev_nacs_power_entity || discovered.ev_nacs_power,
+        this._config.ev_status_entity || discovered.ev_status,
+        this._config.ev_network_entity || discovered.ev_network,
+        this._config.ev_pricing_entity || discovered.ev_pricing,
+        this._config.ev_access_hours_entity || discovered.ev_access_hours,
+        this._config.ev_cards_accepted_entity || discovered.ev_cards_accepted,
+        this._config.ev_date_last_confirmed_entity || discovered.ev_date_last_confirmed,
+      ].filter(Boolean) as string[];
+
+      // Check if any of the mapped entities have changed state/attributes
+      for (const entityId of entities) {
+        const oldState = oldHass.states[entityId];
+        const newState = this.hass.states[entityId];
+        if (oldState !== newState) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    return true;
   }
 
   // Set up custom card editor integration
