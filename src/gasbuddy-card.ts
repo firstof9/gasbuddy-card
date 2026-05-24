@@ -287,11 +287,15 @@ export class GasBuddyCard extends LitElement {
       { key: 'e85', name: 'E85', cashKey: 'e85_cash' },
     ];
 
-    const activeGrades = fuelGrades.filter(
-      (g) =>
-        (g.key in entities && entities[g.key] && this.hass!.states[entities[g.key]!]?.state !== 'unavailable') ||
-        (g.cashKey in entities && entities[g.cashKey] && this.hass!.states[entities[g.cashKey]!]?.state !== 'unavailable'),
-    );
+    const activeGrades = fuelGrades.filter((g) => {
+      const creditState = g.key in entities && entities[g.key] ? this.hass!.states[entities[g.key]!] : undefined;
+      const cashState = g.cashKey in entities && entities[g.cashKey] ? this.hass!.states[entities[g.cashKey]!] : undefined;
+
+      const isAvailable = (stateObj?: { state: string }) =>
+        stateObj && stateObj.state !== 'unavailable' && stateObj.state !== 'unknown';
+
+      return isAvailable(creditState) || isAvailable(cashState);
+    });
 
     return html`
       <div class="gas-grid">

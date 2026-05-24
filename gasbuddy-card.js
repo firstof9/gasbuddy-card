@@ -414,7 +414,7 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
           </div>
         </div>
       </ha-card>
-    `}_renderGasContent(e){const t=[{key:"regular_gas",name:"Regular",cashKey:"regular_gas_cash"},{key:"midgrade_gas",name:"Midgrade",cashKey:"midgrade_gas_cash"},{key:"premium_gas",name:"Premium",cashKey:"premium_gas_cash"},{key:"diesel",name:"Diesel",cashKey:"diesel_cash"},{key:"e15",name:"UNL88",cashKey:"e15_cash"},{key:"e85",name:"E85",cashKey:"e85_cash"}].filter(t=>t.key in e&&e[t.key]&&"unavailable"!==this.hass.states[e[t.key]]?.state||t.cashKey in e&&e[t.cashKey]&&"unavailable"!==this.hass.states[e[t.cashKey]]?.state);return I`
+    `}_renderGasContent(e){const t=[{key:"regular_gas",name:"Regular",cashKey:"regular_gas_cash"},{key:"midgrade_gas",name:"Midgrade",cashKey:"midgrade_gas_cash"},{key:"premium_gas",name:"Premium",cashKey:"premium_gas_cash"},{key:"diesel",name:"Diesel",cashKey:"diesel_cash"},{key:"e15",name:"UNL88",cashKey:"e15_cash"},{key:"e85",name:"E85",cashKey:"e85_cash"}].filter(t=>{const s=t.key in e&&e[t.key]?this.hass.states[e[t.key]]:void 0,i=t.cashKey in e&&e[t.cashKey]?this.hass.states[e[t.cashKey]]:void 0,a=e=>e&&"unavailable"!==e.state&&"unknown"!==e.state;return a(s)||a(i)});return I`
       <div class="gas-grid">
         ${t.map(t=>{const s=e[t.key],i=e[t.cashKey],a=s?this.hass.states[s]:void 0,r=i?this.hass.states[i]:void 0,n=a?ue(a.state):"",o=r?ue(r.state):"",c=n||o||"-",d=n&&o&&n!==o;let l="";return a&&a.attributes.unit_of_measurement?l=a.attributes.unit_of_measurement:r&&r.attributes.unit_of_measurement&&(l=r.attributes.unit_of_measurement),I`
             <div class="price-card">
