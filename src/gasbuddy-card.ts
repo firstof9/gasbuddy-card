@@ -20,9 +20,7 @@ export class GasBuddyCard extends LitElement {
   @state() private _config?: GasBuddyCardConfig;
   @state() private _activeTab: 'gas' | 'ev' = 'gas';
 
-  public static getStyles() {
-    return cardStyles;
-  }
+  public static override styles = cardStyles;
 
   public setConfig(config: GasBuddyCardConfig): void {
     if (!config) {

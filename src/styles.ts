@@ -39,10 +39,11 @@ export const cardStyles = css`
   }
 
   .brand-logo {
-    width: 40px;
     height: 40px;
-    border-radius: 8px;
-    object-fit: contain;
+    width: auto;
+    min-width: 40px;
+    max-width: 80px;
+    border-radius: 6px;
     background: white;
     box-shadow: var(--ha-card-box-shadow, 0 2px 4px rgba(0,0,0,0.1));
     margin-left: 12px;
@@ -51,11 +52,13 @@ export const cardStyles = css`
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    padding: 0 4px;
   }
 
   .brand-logo img {
-    max-width: 90%;
-    max-height: 90%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
   }
 
   .brand-logo ha-icon {
@@ -102,9 +105,9 @@ export const cardStyles = css`
   }
 
   .price-card {
-    background: var(--card-background-color, var(--ha-card-background, #fff));
-    border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
-    border-radius: 12px;
+    background: var(--ha-card-background, var(--card-background-color, rgba(255, 255, 255, 0.05)));
+    border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color, rgba(0, 0, 0, 0.12)));
+    border-radius: var(--ha-card-border-radius, 12px);
     padding: 12px;
     text-align: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -115,7 +118,7 @@ export const cardStyles = css`
 
   .price-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: var(--ha-card-box-shadow, 0 4px 8px rgba(0,0,0,0.1));
   }
 
   .fuel-type {
