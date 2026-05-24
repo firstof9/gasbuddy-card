@@ -232,3 +232,72 @@ export function formatTimestamp(timestamp: unknown): string {
     return String(timestamp);
   }
 }
+
+/**
+ * Returns payment card inline SVGs for a given string of accepted payments.
+ */
+export function getPaymentIcons(cardsString: string): TemplateResult[] {
+  if (!cardsString) return [];
+  const normalized = cardsString.toLowerCase();
+
+  // Tokenize by splitting on spaces, commas, or semicolons
+  const tokens = normalized.split(/[\s,;]+/).map((t) => t.trim()).filter(Boolean);
+
+  const icons: TemplateResult[] = [];
+  const added = new Set<string>();
+
+  for (const token of tokens) {
+    if ((token === 'v' || token.includes('visa')) && !added.has('visa')) {
+      icons.push(html`
+        <svg viewBox="0 0 36 24" width="36" height="24" class="payment-card-icon" title="Visa">
+          <rect width="36" height="24" rx="3" fill="#1A1F71"/>
+          <text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-weight="bold" font-style="italic" font-size="11">VISA</text>
+        </svg>
+      `);
+      added.add('visa');
+    } else if (
+      (token === 'm' || token.includes('mastercard') || token.includes('master')) &&
+      !added.has('mastercard')
+    ) {
+      icons.push(html`
+        <svg viewBox="0 0 36 24" width="36" height="24" class="payment-card-icon" title="Mastercard">
+          <rect width="36" height="24" rx="3" fill="#111111"/>
+          <circle cx="14" cy="12" r="7" fill="#EB001B"/>
+          <circle cx="22" cy="12" r="7" fill="#F79E1B" fill-opacity="0.8"/>
+        </svg>
+      `);
+      added.add('mastercard');
+    } else if (
+      (token === 'a' || token.includes('american') || token.includes('express') || token.includes('amex')) &&
+      !added.has('amex')
+    ) {
+      icons.push(html`
+        <svg viewBox="0 0 36 24" width="36" height="24" class="payment-card-icon" title="American Express">
+          <rect width="36" height="24" rx="3" fill="#0070CD"/>
+          <text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-weight="900" font-size="9" letter-spacing="0.5">AMEX</text>
+        </svg>
+      `);
+      added.add('amex');
+    } else if ((token === 'd' || token.includes('discover')) && !added.has('discover')) {
+      icons.push(html`
+        <svg viewBox="0 0 36 24" width="36" height="24" class="payment-card-icon" title="Discover">
+          <rect width="36" height="24" rx="3" fill="#F05A28"/>
+          <text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-weight="bold" font-size="7" letter-spacing="0.5">DISCOVER</text>
+        </svg>
+      `);
+      added.add('discover');
+    } else if (token.includes('debit') && !added.has('debit')) {
+      icons.push(html`
+        <svg viewBox="0 0 36 24" width="36" height="24" class="payment-card-icon" title="Debit Card">
+          <rect width="36" height="24" rx="3" fill="#008080"/>
+          <rect x="4" y="8" width="6" height="5" rx="1" fill="#FFD700"/>
+          <text x="21" y="65%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-weight="bold" font-size="7">DEBIT</text>
+        </svg>
+      `);
+      added.add('debit');
+    }
+  }
+
+  return icons;
+}
+

@@ -6,6 +6,7 @@ import {
   findDeviceEntities,
   getNetworkColor,
   getNetworkLogo,
+  getPaymentIcons,
   formatPrice,
   formatDistance,
   formatTimestamp,
@@ -488,7 +489,14 @@ export class GasBuddyCard extends LitElement {
             ? html`
                 <div class="metadata-item">
                   <span class="metadata-key">Payments</span>
-                  <span class="metadata-val">${acceptedCards}</span>
+                  <span class="metadata-val">
+                    ${(() => {
+                      const icons = getPaymentIcons(String(acceptedCards));
+                      return icons.length > 0
+                        ? html`<div class="payment-icons-container">${icons}</div>`
+                        : acceptedCards;
+                    })()}
+                  </span>
                 </div>
               `
             : ''}

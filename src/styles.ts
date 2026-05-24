@@ -327,6 +327,22 @@ export const cardStyles = css`
     gap: 4px;
   }
 
+  /* Payment Card Badges */
+  .payment-icons-container {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .payment-card-icon {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    border-radius: 3px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
   /* Mobile Responsive overrides */
   @media (max-width: 360px) {
     .charger-summary {
