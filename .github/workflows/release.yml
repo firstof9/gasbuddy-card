@@ -24,6 +24,14 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci
+      - name: Inject Version
+        run: |
+          VERSION="${{ github.event.inputs.tag || github.event.release.tag_name }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="1.0.0"
+          fi
+          VERSION_CLEAN="${VERSION#v}"
+          sed -i "s/'VERSION'/'$VERSION_CLEAN'/g" src/gasbuddy-card.ts
       - run: npm run build
       - name: Upload card bundle
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0

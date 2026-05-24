@@ -599,3 +599,10 @@ export class GasBuddyCard extends LitElement {
   preview: true,
   description: 'A premium Home Assistant custom card for GasBuddy integration gas prices and EV stations.',
 });
+
+const CARD_VERSION = 'VERSION';
+console.info(
+  `%c  GASBUDDY-CARD  \n%c  Version ${CARD_VERSION}  `,
+  'color: orange; font-weight: bold; background: black; padding:3px 0px;',
+  'color: white; font-weight: bold; background: dimgrey; padding:3px 0px;',
+);
