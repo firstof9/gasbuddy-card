@@ -42,7 +42,49 @@ export class GasBuddyCard extends LitElement {
   }
 
   public getCardSize(): number {
-    return 4;
+    // 1 size unit ≈ 50px. Defaults to 4 (≈ the pre-rendered card height)
+    // until hass + a configured device let us compute a tighter estimate.
+    if (!this.hass || !this._config?.device_id) return 4;
+
+    const discovered = findDeviceEntities(this.hass, this._config.device_id);
+    const cfg = this._config;
+    const resolve = (key: string): string | undefined =>
+      (cfg[`${key}_entity` as keyof GasBuddyCardConfig] as string | undefined) ?? discovered[key];
+
+    const isActive = (entityId?: string): boolean => {
+      if (!entityId) return false;
+      const s = this.hass!.states[entityId];
+      return !!s && s.state !== 'unavailable' && s.state !== 'unknown';
+    };
+
+    const gasGradeKeys = ['regular_gas', 'midgrade_gas', 'premium_gas', 'diesel', 'e15', 'e85'];
+    const activeGasGrades = gasGradeKeys.filter(
+      (k) => isActive(resolve(k)) || isActive(resolve(`${k}_cash`)),
+    ).length;
+
+    const evKeys = [
+      'ev_level1',
+      'ev_level2',
+      'ev_dc_fast',
+      'ev_j1772',
+      'ev_ccs',
+      'ev_chademo',
+      'ev_nacs',
+      'ev_network',
+    ];
+    const hasEV = evKeys.some((k) => isActive(resolve(k)));
+    const hasGas = activeGasGrades > 0;
+
+    // header + footer
+    let size = 2;
+    // tab strip only when both modes coexist
+    if (hasGas && hasEV) size += 1;
+    // gas grid: ~2 cards per row on a sections view, so half-units per grade
+    if (hasGas) size += Math.max(1, Math.ceil(activeGasGrades / 2));
+    // ev section: charger summary + connectors grid + metadata list
+    if (hasEV) size += 3;
+
+    return Math.max(2, size);
   }
 
   protected override updated(changedProperties: PropertyValues): void {
