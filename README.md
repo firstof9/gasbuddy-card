@@ -100,7 +100,6 @@ ev_cards_accepted_entity: sensor.other_ev_payment_methods
 | `type` | string | **Required** | Must be `custom:gasbuddy-card`. |
 | `device_id` | string | **Required** | The device registry ID of the GasBuddy station. |
 | `title` | string | Optional | Custom title header of the card. |
-| `default_mode` | string | `gas` | Default active tab to display. Options: `gas`, `ev`. |
 | `<fuel_type>_entity` | string | Auto-discovered | Manual override for specific fuel price sensors. |
 | `<ev_sensor>_entity` | string | Auto-discovered | Manual override for specific EV charger status/connector sensors. |
 
