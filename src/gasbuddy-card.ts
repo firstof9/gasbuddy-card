@@ -261,7 +261,7 @@ export class GasBuddyCard extends LitElement {
           stationAddress = String(attrs.street_address);
         }
         if (attrs.distance_miles !== undefined && !distance) {
-          distance = formatDistance(attrs.distance_miles);
+          distance = formatDistance(attrs.distance_miles, this.hass);
         }
         if (attrs.entity_picture && !brandLogoUrl) {
           brandLogoUrl = attrs.entity_picture as string;
@@ -381,8 +381,10 @@ export class GasBuddyCard extends LitElement {
           const creditState = creditEntityId ? this.hass!.states[creditEntityId] : undefined;
           const cashState = cashEntityId ? this.hass!.states[cashEntityId] : undefined;
 
-          const creditPriceStr = creditState ? formatPrice(creditState.state) : '';
-          const cashPriceStr = cashState ? formatPrice(cashState.state) : '';
+          const creditUnit = creditState?.attributes?.unit_of_measurement as string | undefined;
+          const cashUnit = cashState?.attributes?.unit_of_measurement as string | undefined;
+          const creditPriceStr = creditState ? formatPrice(creditState.state, creditUnit) : '';
+          const cashPriceStr = cashState ? formatPrice(cashState.state, cashUnit) : '';
 
           const displayPrice = creditPriceStr || cashPriceStr || '-';
           const hasBoth = creditPriceStr && cashPriceStr && creditPriceStr !== cashPriceStr;

@@ -25,6 +25,13 @@ export interface HomeAssistant {
   entities?: Record<string, HomeAssistantEntity>;
   locale?: { language?: string };
   language?: string;
+  config?: {
+    unit_system?: {
+      length?: string;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
   connection?: {
     sendMessagePromise: (msg: Record<string, unknown>) => Promise<unknown>;
   };
