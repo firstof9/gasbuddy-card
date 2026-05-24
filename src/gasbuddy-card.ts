@@ -190,16 +190,22 @@ export class GasBuddyCard extends LitElement {
       const attrs = sampleStateObj.attributes;
       attribution = attrs.attribution || 'GasBuddy';
 
-      // Parse station name/address from attributes
-      if (currentTab === 'ev' && attrs.station_name) {
+      // Parse station name from attributes
+      if (attrs.station_name) {
         stationName = String(attrs.station_name);
-        stationAddress = String(attrs.station_address || '');
       } else {
         // Strip suffix to get station base name from friendly name
         const friendlyName = attrs.friendly_name || '';
         stationName = friendlyName
           .replace(/\s(Regular|Midgrade|Premium|Diesel|Last Updated|EV Level|EV DC|EV CCS|EV NACS|EV CHAdeMO|EV J1772).*/i, '')
           .trim();
+      }
+
+      // Parse station address from attributes
+      if (attrs.station_address) {
+        stationAddress = String(attrs.station_address);
+      } else if (attrs.street_address) {
+        stationAddress = String(attrs.street_address);
       }
 
       if (attrs.distance_miles !== undefined) {
@@ -224,7 +230,7 @@ export class GasBuddyCard extends LitElement {
           <div class="header-text">
             <div class="title ellipsis" role="heading" aria-level="2">${stationName}</div>
             <div class="subtitle ellipsis">
-              ${stationAddress || 'GasBuddy Location'} ${distance ? `• ${distance}` : ''}
+              ${stationAddress}${stationAddress && distance ? ` • ${distance}` : distance}
             </div>
           </div>
           <div class="brand-logo" aria-hidden="true">

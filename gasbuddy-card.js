@@ -373,14 +373,14 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
             No active sensors found for this GasBuddy device. Verify that the integration has loaded data successfully.
           </div>
         </ha-card>
-      `;let n=this._activeTab;a&&!r&&(n="gas"),r&&!a&&(n="ev");const o=s.regular_gas||s.ev_level2||s.ev_dc_fast||s.last_updated,c=o?this.hass.states[o]:void 0;let l="Gas Station",d="",h="",p="",_="GasBuddy";if(c&&c.attributes){const e=c.attributes;if(_=e.attribution||"GasBuddy","ev"===n&&e.station_name)l=String(e.station_name),d=String(e.station_address||"");else{l=(e.friendly_name||"").replace(/\s(Regular|Midgrade|Premium|Diesel|Last Updated|EV Level|EV DC|EV CCS|EV NACS|EV CHAdeMO|EV J1772).*/i,"").trim()}void 0!==e.distance_miles&&(h=function(e){if(null==e||"unknown"===e||"unavailable"===e)return"";const t=Number(e);return isNaN(t)?String(e):`${t.toFixed(1)} mi`}(e.distance_miles)),c.attributes.entity_picture&&(p=c.attributes.entity_picture)}return this._config.title&&(l=this._config.title),z`
+      `;let n=this._activeTab;a&&!r&&(n="gas"),r&&!a&&(n="ev");const o=s.regular_gas||s.ev_level2||s.ev_dc_fast||s.last_updated,c=o?this.hass.states[o]:void 0;let l="Gas Station",d="",h="",p="",_="GasBuddy";if(c&&c.attributes){const e=c.attributes;if(_=e.attribution||"GasBuddy",e.station_name)l=String(e.station_name);else{l=(e.friendly_name||"").replace(/\s(Regular|Midgrade|Premium|Diesel|Last Updated|EV Level|EV DC|EV CCS|EV NACS|EV CHAdeMO|EV J1772).*/i,"").trim()}e.station_address?d=String(e.station_address):e.street_address&&(d=String(e.street_address)),void 0!==e.distance_miles&&(h=function(e){if(null==e||"unknown"===e||"unavailable"===e)return"";const t=Number(e);return isNaN(t)?String(e):`${t.toFixed(1)} mi`}(e.distance_miles)),c.attributes.entity_picture&&(p=c.attributes.entity_picture)}return this._config.title&&(l=this._config.title),z`
       <ha-card>
         <!-- Header -->
         <div class="header">
           <div class="header-text">
             <div class="title ellipsis" role="heading" aria-level="2">${l}</div>
             <div class="subtitle ellipsis">
-              ${d||"GasBuddy Location"} ${h?`• ${h}`:""}
+              ${d}${d&&h?` • ${h}`:h}
             </div>
           </div>
           <div class="brand-logo" aria-hidden="true">
