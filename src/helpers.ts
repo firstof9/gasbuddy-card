@@ -80,101 +80,89 @@ export function findDeviceEntities(hass: HomeAssistant, deviceId: string): Recor
   return mapped;
 }
 
+interface NetworkBrand {
+  name: string;
+  color: string;
+  // SVG path data (24x24 viewBox). Brands without a CC0 vector mark omit this
+  // and render as a colored text pill instead.
+  svgPath?: string;
+}
+
+// First substring match wins, so order matters for ambiguous names.
+const NETWORK_BRANDS: ReadonlyArray<{ match: string; brand: NetworkBrand }> = [
+  {
+    match: 'tesla',
+    brand: {
+      name: 'Tesla',
+      color: '#cc0000',
+      // Simple Icons "Tesla" — CC0 1.0 — https://simpleicons.org/icons/tesla
+      svgPath:
+        'M12 5.362l2.475-3.026s4.245.09 8.471 2.054c-1.082 1.636-3.231 2.438-3.231 2.438-.146-1.439-1.154-1.79-4.354-1.79L12 24 8.619 5.034c-3.18 0-4.188.354-4.335 1.792 0 0-2.146-.795-3.229-2.43C5.28 2.431 9.525 2.34 9.525 2.34L12 5.362l-.004.002H12v-.002zm0-3.899c3.415-.03 7.326.528 11.328 2.28.535-.968.672-1.395.672-1.395C19.625.612 15.528.015 12 0 8.472.015 4.375.61 0 2.349c0 0 .195.525.672 1.396C4.674 1.989 8.585 1.435 12 1.46v.003z',
+    },
+  },
+  {
+    match: 'shell',
+    brand: {
+      name: 'Shell',
+      color: '#fbce07',
+      // Simple Icons "Shell" — CC0 1.0 — https://simpleicons.org/icons/shell
+      svgPath:
+        'M12 .863C5.34.863 0 6.251 0 12.98c0 .996.038 1.374.246 2.33l3.662 2.71.57 4.515h6.102l.326.227c.377.262.705.375 1.082.375.352 0 .732-.101 1.024-.313l.39-.289h6.094l.563-4.515 3.695-2.71c.208-.956.246-1.334.246-2.33C24 6.252 18.661.863 12 .863zm.996 2.258c.9 0 1.778.224 2.512.649l-2.465 12.548 3.42-12.062c1.059.36 1.863.941 2.508 1.814l.025.034-4.902 10.615 5.572-9.713.033.03c.758.708 1.247 1.567 1.492 2.648l-6.195 7.666 6.436-6.5.01.021c.253.563.417 1.36.417 1.996 0 .509-.024.712-.164 1.25l-3.554 2.602-.467 3.71h-4.475l-.517.395c-.199.158-.482.266-.682.266-.199 0-.483-.108-.682-.266l-.517-.394H6.322l-.445-3.61-3.627-2.666c-.11-.436-.16-.83-.16-1.261 0-.72.159-1.49.426-2.053l.013-.024 6.45 6.551L2.75 9.621c.25-1.063.874-2.09 1.64-2.713l5.542 9.776L4.979 6.1c.555-.814 1.45-1.455 2.546-1.827l3.424 12.069L8.355 3.816l.055-.03c.814-.45 1.598-.657 2.457-.657.195 0 .286.004.528.03l.587 13.05.46-13.059c.224-.025.309-.029.554-.029z',
+    },
+  },
+  // Brands below have no CC0 vector mark we can ship, so they render as
+  // colored text pills in their canonical brand color.
+  { match: 'electrify america', brand: { name: 'Electrify America', color: '#00a261' } },
+  { match: 'chargepoint', brand: { name: 'ChargePoint', color: '#40b83c' } },
+  { match: 'evgo', brand: { name: 'EVgo', color: '#0055ff' } },
+  { match: 'blink', brand: { name: 'Blink', color: '#0066cc' } },
+  { match: 'flo', brand: { name: 'FLO', color: '#1c85c8' } },
+];
+
+export function getNetworkBrand(network?: string | null): NetworkBrand | null {
+  if (!network) return null;
+  const lower = String(network).toLowerCase();
+  const match = NETWORK_BRANDS.find((entry) => lower.includes(entry.match));
+  return match ? match.brand : null;
+}
+
 /**
  * Returns a color associated with an EV charging network.
  */
 export function getNetworkColor(network: string): string {
-  if (!network) return 'var(--primary-color)';
-  const net = network.toLowerCase();
-  if (net.includes('tesla')) return '#cc0000';
-  if (net.includes('chargepoint')) return '#40b83c';
-  if (net.includes('evgo')) return '#0055ff';
-  if (net.includes('electrify america')) return '#00a261';
-  if (net.includes('blink')) return '#0066cc';
-  if (net.includes('flo')) return '#1c85c8';
-  if (net.includes('shell')) return '#fcd116';
-  return 'var(--primary-color)';
+  return getNetworkBrand(network)?.color ?? 'var(--primary-color)';
 }
 
 /**
- * Returns an inline SVG brand logo for the EV network.
+ * Returns a logo for an EV network. Tesla and Shell render as their
+ * official CC0 vector marks (Simple Icons); other known networks render
+ * as a colored text pill in the brand color; unknown networks fall back
+ * to the generic ev-station icon.
  */
 export function getNetworkLogo(network: string): TemplateResult {
-  if (!network) return html`<ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>`;
-  const net = network.toLowerCase();
-
-  // Tesla SVG Red T Logo
-  if (net.includes('tesla')) {
+  const brand = getNetworkBrand(network);
+  if (!brand) {
+    return html`<ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>`;
+  }
+  if (brand.svgPath) {
     return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #cc0000;" role="img" aria-label="Tesla Network">
-        <path d="M12,2C11.5,2 10,4.8 9.8,5.7C10.7,5.5 11.5,5.4 12,5.4C12.5,5.4 13.3,5.5 14.2,5.7C14,4.8 12.5,2 12,2M12,6.8C10.5,6.8 8.8,7.3 7,8.2C6.9,8.5 6.8,8.8 6.8,9C8.3,8.2 10.3,7.8 12,7.8C13.7,7.8 15.7,8.2 17.2,9C17.2,8.8 17.1,8.5 17,8.2C15.2,7.3 13.5,6.8 12,6.8M7.2,10.2C7.1,10.5 7,10.9 7,11.2C8.7,10.5 10.5,10.2 12,10.2C13.5,10.2 15.3,10.5 17,11.2C17,10.9 16.9,10.5 16.8,10.2C15.2,9.6 13.5,9.2 12,9.2C10.5,9.2 8.8,9.6 7.2,10.2M12,11.5C10.2,11.5 8.2,12 6.5,12.8C6.5,13.2 6.5,13.5 6.5,13.8C8,12.8 10.2,12.4 12,12.4C13.8,12.4 16,12.8 17.5,13.8C17.5,13.5 17.5,13.2 17.5,12.8C15.8,12 13.8,11.5 12,11.5M12,14.5C10.8,14.5 9.5,14.7 8.2,15.1L8.2,22C8.2,22 12,21.5 12,20.5L12,15.5C12,15.5 12,14.5 12,14.5Z"/>
+      <svg
+        class="network-svg"
+        viewBox="0 0 24 24"
+        role="img"
+        aria-label="${brand.name}"
+        style="fill: ${brand.color}"
+      >
+        <title>${brand.name}</title>
+        <path d="${brand.svgPath}" />
       </svg>
     `;
   }
-
-  // ChargePoint Style SVG (Green C shape logo)
-  if (net.includes('chargepoint')) {
-    return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #40b83c;" role="img" aria-label="ChargePoint Network">
-        <circle cx="12" cy="12" r="10" fill="none" stroke="#40b83c" stroke-width="2.5"/>
-        <path d="M14.5,8.5 C13.5,7.5 12,7 10.5,7 C8,7 6,9 6,11.5 C6,14 8,16 10.5,16 C12,16 13.5,15.5 14.5,14.5" fill="none" stroke="#40b83c" stroke-width="3" stroke-linecap="round"/>
-        <circle cx="15" cy="11.5" r="1.5"/>
-      </svg>
-    `;
-  }
-
-  // EVgo style SVG (Glowing Blue/Orange)
-  if (net.includes('evgo')) {
-    return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #0055ff;" role="img" aria-label="EVgo Network">
-        <path d="M2,10 L8,10 L5,22 L14,12 L9,12 L12,2 Z" />
-        <text x="14" y="21" font-size="7" font-weight="900" fill="#0055ff">go</text>
-      </svg>
-    `;
-  }
-
-  // Electrify America (Green EA)
-  if (net.includes('electrify america')) {
-    return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #00a261;" role="img" aria-label="Electrify America Network">
-        <rect x="2" y="2" width="20" height="20" rx="4" fill="none" stroke="#00a261" stroke-width="2"/>
-        <path d="M6,17 L10,7 L14,17 M7.5,13.5 L12.5,13.5" fill="none" stroke="#00a261" stroke-width="2"/>
-        <path d="M15,7 L19,7 M15,12 L18,12 M15,17 L19,17" fill="none" stroke="#00a261" stroke-width="2"/>
-      </svg>
-    `;
-  }
-
-  // Blink (Lighting Bolt logo)
-  if (net.includes('blink')) {
-    return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #0066cc;" role="img" aria-label="Blink Network">
-        <circle cx="12" cy="12" r="10" fill="none" stroke="#0066cc" stroke-width="2"/>
-        <path d="M11,4 L16,11 L13,11 L15,18 L9,11 L12,11 Z" />
-      </svg>
-    `;
-  }
-
-  // Flo (Waves/Lines logo)
-  if (net.includes('flo')) {
-    return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #1c85c8;" role="img" aria-label="FLO Network">
-        <path d="M4,12 C4,7.5 7.5,4 12,4 C16.5,4 20,7.5 20,12 C20,16.5 16.5,20 12,20" fill="none" stroke="#1c85c8" stroke-width="2"/>
-        <path d="M8,12 C8,9.8 9.8,8 12,8 C14.2,8 16,9.8 16,12" fill="none" stroke="#1c85c8" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    `;
-  }
-
-  // Shell Recharge (Yellow Shell representation)
-  if (net.includes('shell')) {
-    return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #fcd116;" role="img" aria-label="Shell Recharge Network">
-        <path d="M12,2 A10,10 0 0,0 2,12 A10,10 0 0,0 12,22 A10,10 0 0,0 22,12 A10,10 0 0,0 12,2 M12,4 C15.5,4 18,6.5 18,10 C18,14.5 12,20 12,20 C12,20 6,14.5 6,10 C6,6.5 8.5,4 12,4 Z" />
-        <circle cx="12" cy="10" r="3" fill="#d00000"/>
-      </svg>
-    `;
-  }
-
-  return html`<ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>`;
+  return html`
+    <span class="network-pill" style="background: ${brand.color}" role="img" aria-label="${brand.name}">
+      ${brand.name}
+    </span>
+  `;
 }
 
 // Currencies the gasbuddy integration may report. Anything else falls back to USD.

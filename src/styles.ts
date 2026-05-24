@@ -66,6 +66,38 @@ export const cardStyles = css`
     color: var(--primary-color);
   }
 
+  /* When the brand slot holds an EV network logo (SVG or pill), drop the
+     white "card" framing — the brand color carries the visual itself. */
+  .brand-logo.brand-network {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    min-width: 0;
+    max-width: none;
+    overflow: visible;
+  }
+
+  .network-svg {
+    width: 32px;
+    height: 32px;
+    display: block;
+  }
+
+  .network-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #fff;
+    white-space: nowrap;
+    line-height: 1;
+  }
+
   /* Mode Switcher Tabs */
   .tabs {
     display: flex;
