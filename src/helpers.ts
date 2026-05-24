@@ -309,7 +309,7 @@ export function getPaymentIcons(cardsString: string): TemplateResult[] {
     ) {
       icons.push(html`
         <svg viewBox="0 0 36 24" width="36" height="24" class="payment-card-icon" title="American Express" role="img" aria-label="American Express accepted">
-          <rect width="36" height="24" rx="3" fill="#0070CD"/>
+          <rect width="36" height="24" rx="3" fill="#006FCF"/>
           <text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-weight="900" font-size="9" letter-spacing="0.5">AMEX</text>
         </svg>
       `);
