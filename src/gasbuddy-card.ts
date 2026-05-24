@@ -322,12 +322,25 @@ export class GasBuddyCard extends LitElement {
           return html`
             <div class="price-card">
               <div class="fuel-type">${grade.name}</div>
-              <div class="fuel-price">${displayPrice}</div>
+              ${hasBoth
+                ? html`
+                    <div class="dual-prices">
+                      <div class="price-col">
+                        <span class="fuel-price">${creditPriceStr}</span>
+                        <span class="price-label">Credit</span>
+                      </div>
+                      <div class="price-col">
+                        <span class="fuel-price">${cashPriceStr}</span>
+                        <span class="price-label">Cash</span>
+                      </div>
+                    </div>
+                  `
+                : html`
+                    <div class="fuel-price">${displayPrice}</div>
+                    <div class="price-label">${creditPriceStr ? 'Credit' : 'Cash'}</div>
+                  `}
               <div class="fuel-meta">
                 <span>${unit || 'USD'}</span>
-                ${hasBoth
-                  ? html`• <span style="font-weight: 600; color: var(--primary-color);">${cashPriceStr} Cash</span>`
-                  : ''}
               </div>
             </div>
           `;

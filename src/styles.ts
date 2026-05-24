@@ -137,6 +137,33 @@ export const cardStyles = css`
     margin: 6px 0;
   }
 
+  .dual-prices {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+  }
+
+  .price-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .price-col .fuel-price {
+    font-size: 18px;
+    margin: 0;
+  }
+
+  .price-label {
+    font-size: 9px;
+    color: var(--secondary-text-color);
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
   .fuel-meta {
     font-size: 10px;
     color: var(--secondary-text-color);
