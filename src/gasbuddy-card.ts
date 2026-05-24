@@ -242,6 +242,8 @@ export class GasBuddyCard extends LitElement {
     let distance = '';
     let brandLogoUrl = '';
     let attribution = 'GasBuddy';
+    let latitude: number | undefined;
+    let longitude: number | undefined;
 
     // Scan all resolved entities to compile the most complete station metadata
     for (const entityId of Object.values(entities)) {
@@ -266,7 +268,21 @@ export class GasBuddyCard extends LitElement {
         if (attrs.entity_picture && !brandLogoUrl) {
           brandLogoUrl = attrs.entity_picture as string;
         }
+        if (typeof attrs.latitude === 'number' && latitude === undefined) {
+          latitude = attrs.latitude;
+        }
+        if (typeof attrs.longitude === 'number' && longitude === undefined) {
+          longitude = attrs.longitude;
+        }
       }
+    }
+
+    // Build a Google Maps URL from coords (preferred) or address.
+    let mapsUrl = '';
+    if (latitude !== undefined && longitude !== undefined) {
+      mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+    } else if (stationAddress) {
+      mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stationAddress)}`;
     }
 
     // Fallback: Parse name from friendly_name if no station_name attribute was found
@@ -292,7 +308,22 @@ export class GasBuddyCard extends LitElement {
         <!-- Header -->
         <div class="header">
           <div class="header-text">
-            <div class="title ellipsis" role="heading" aria-level="2">${stationName}</div>
+            <div class="title ellipsis" role="heading" aria-level="2">
+              ${mapsUrl
+                ? html`
+                    <a
+                      class="title-link"
+                      href="${mapsUrl}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open in Maps"
+                    >
+                      ${stationName}
+                      <ha-icon class="title-link-icon" icon="mdi:open-in-new" aria-hidden="true"></ha-icon>
+                    </a>
+                  `
+                : stationName}
+            </div>
             <div class="subtitle ellipsis">
               ${stationAddress}${stationAddress && distance ? ` • ${distance}` : distance}
             </div>
