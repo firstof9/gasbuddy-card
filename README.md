@@ -11,13 +11,13 @@ A modern, premium Home Assistant custom Lovelace card for displaying gas prices 
 ## Screenshots
 
 ### Gas Prices View
-![Gas Prices State](screenshots/gas_prices.png)
+![Gas Prices State](screenshots/gas_station.png)
 
 ### EV Chargers View
-![EV Chargers State](screenshots/ev_chargers.png)
+![EV Chargers State](screenshots/ev_only_station.png)
 
 ### Visual Configuration
-![Configuration Editor](screenshots/config.png)
+![Configuration Editor](screenshots/card_editor.png)
 
 ## Requirements
 
