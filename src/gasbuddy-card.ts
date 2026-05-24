@@ -13,6 +13,7 @@ import {
   generateSparklinePaths,
   type HistoryPoint,
 } from './helpers.js';
+import { t } from './i18n.js';
 
 // Register the custom element editor
 import './editor.js';
@@ -290,7 +291,8 @@ export class GasBuddyCard extends LitElement {
   }
 
   private _collectStationMetadata(entities: ResolvedEntities): StationMetadata {
-    let name = 'Gas Station';
+    const defaultStationName = t(this.hass, 'default_station_name');
+    let name = defaultStationName;
     let address = '';
     let distance = '';
     let brandLogoUrl = '';
@@ -308,7 +310,7 @@ export class GasBuddyCard extends LitElement {
       if (attrs.attribution && attribution === 'GasBuddy') {
         attribution = String(attrs.attribution);
       }
-      if (attrs.station_name && name === 'Gas Station') {
+      if (attrs.station_name && name === defaultStationName) {
         name = String(attrs.station_name);
       }
       if (!address) {
@@ -330,7 +332,7 @@ export class GasBuddyCard extends LitElement {
     }
 
     // Fallback: derive name from a friendly_name by stripping the sensor suffix.
-    if (name === 'Gas Station') {
+    if (name === defaultStationName) {
       const firstActive = Object.values(entities).find((eid) => eid && this.hass!.states[eid]);
       if (firstActive) {
         const friendlyName = this.hass!.states[firstActive]?.attributes?.friendly_name || '';
@@ -363,7 +365,7 @@ export class GasBuddyCard extends LitElement {
       return html`
         <ha-card>
           <div class="card-message card-message--error">
-            Please select a GasBuddy Device in the card configuration editor.
+            ${t(this.hass, 'missing_device')}
           </div>
         </ha-card>
       `;
@@ -377,7 +379,7 @@ export class GasBuddyCard extends LitElement {
       return html`
         <ha-card>
           <div class="card-message card-message--info">
-            No active sensors found for this GasBuddy device. Verify that the integration has loaded data successfully.
+            ${t(this.hass, 'no_active_sensors')}
           </div>
         </ha-card>
       `;
@@ -466,7 +468,7 @@ export class GasBuddyCard extends LitElement {
           ${currentTab === 'ev' && evNetworkEntityId
             ? getNetworkLogo(this.hass!.states[evNetworkEntityId]?.state || '')
             : meta.brandLogoUrl
-            ? html`<img src="${meta.brandLogoUrl}" alt="Brand logo" />`
+            ? html`<img src="${meta.brandLogoUrl}" alt="${t(this.hass, 'brand_logo_alt')}" />`
             : html`<ha-icon icon="mdi:gas-station"></ha-icon>`}
         </div>
       </div>
@@ -486,7 +488,7 @@ export class GasBuddyCard extends LitElement {
           @click=${() => (this._activeTab = 'gas')}
           @keydown=${this._onTabKeydown}
         >
-          Gas Prices
+          ${t(this.hass, 'tab_gas')}
         </button>
         <button
           id="gasbuddy-tab-ev"
@@ -498,7 +500,7 @@ export class GasBuddyCard extends LitElement {
           @click=${() => (this._activeTab = 'ev')}
           @keydown=${this._onTabKeydown}
         >
-          EV Chargers
+          ${t(this.hass, 'tab_ev')}
         </button>
       </div>
     `;
@@ -512,7 +514,7 @@ export class GasBuddyCard extends LitElement {
           ? html`
               <div class="last-updated">
                 <ha-icon icon="mdi:clock-outline" aria-hidden="true"></ha-icon>
-                <span>Updated: ${formatTimestamp(this.hass!.states[lastUpdatedEntityId]?.state)}</span>
+                <span>${t(this.hass, 'updated_prefix')} ${formatTimestamp(this.hass!.states[lastUpdatedEntityId]?.state)}</span>
               </div>
             `
           : ''}
@@ -553,12 +555,12 @@ export class GasBuddyCard extends LitElement {
 
   private _renderGasContent(entities: ResolvedEntities): TemplateResult {
     const fuelGrades = [
-      { key: 'regular_gas' as const, name: 'Regular', cashKey: 'regular_gas_cash' as const },
-      { key: 'midgrade_gas' as const, name: 'Midgrade', cashKey: 'midgrade_gas_cash' as const },
-      { key: 'premium_gas' as const, name: 'Premium', cashKey: 'premium_gas_cash' as const },
-      { key: 'diesel' as const, name: 'Diesel', cashKey: 'diesel_cash' as const },
-      { key: 'e15' as const, name: 'UNL88', cashKey: 'e15_cash' as const },
-      { key: 'e85' as const, name: 'E85', cashKey: 'e85_cash' as const },
+      { key: 'regular_gas' as const, name: t(this.hass, 'grade_regular'), cashKey: 'regular_gas_cash' as const },
+      { key: 'midgrade_gas' as const, name: t(this.hass, 'grade_midgrade'), cashKey: 'midgrade_gas_cash' as const },
+      { key: 'premium_gas' as const, name: t(this.hass, 'grade_premium'), cashKey: 'premium_gas_cash' as const },
+      { key: 'diesel' as const, name: t(this.hass, 'grade_diesel'), cashKey: 'diesel_cash' as const },
+      { key: 'e15' as const, name: t(this.hass, 'grade_unl88'), cashKey: 'e15_cash' as const },
+      { key: 'e85' as const, name: t(this.hass, 'grade_e85'), cashKey: 'e85_cash' as const },
     ];
 
     const activeGrades = fuelGrades.filter((g) => {
@@ -595,8 +597,8 @@ export class GasBuddyCard extends LitElement {
               class="price-card"
               role="group"
               aria-label="${grade.name} price: ${creditPriceStr && cashPriceStr
-                ? `${creditPriceStr} Credit, ${cashPriceStr} Cash`
-                : `${displayPrice} ${creditPriceStr ? 'Credit' : 'Cash'}`}"
+                ? `${creditPriceStr} ${t(this.hass, 'price_credit')}, ${cashPriceStr} ${t(this.hass, 'price_cash')}`
+                : `${displayPrice} ${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')}`}"
             >
               ${this._renderTrendGraph(creditEntityId || cashEntityId)}
               <div class="price-card-content" aria-hidden="true">
@@ -606,17 +608,17 @@ export class GasBuddyCard extends LitElement {
                       <div class="dual-prices">
                         <div class="price-col">
                           <span class="fuel-price">${creditPriceStr}</span>
-                          <span class="price-label">Credit</span>
+                          <span class="price-label">${t(this.hass, 'price_credit')}</span>
                         </div>
                         <div class="price-col">
                           <span class="fuel-price">${cashPriceStr}</span>
-                          <span class="price-label">Cash</span>
+                          <span class="price-label">${t(this.hass, 'price_cash')}</span>
                         </div>
                       </div>
                     `
                   : html`
                       <div class="fuel-price">${displayPrice}</div>
-                      <div class="price-label">${creditPriceStr ? 'Credit' : 'Cash'}</div>
+                      <div class="price-label">${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')}</div>
                     `}
                 <div class="fuel-meta">
                   <span>${unit || 'USD'}</span>
@@ -669,33 +671,33 @@ export class GasBuddyCard extends LitElement {
         <div class="charger-summary">
           ${l1Count > 0
             ? html`
-                <div class="charger-badge" role="group" aria-label="${l1Count} Level 1 chargers">
+                <div class="charger-badge" role="group" aria-label="${l1Count} ${t(this.hass, 'charger_level1')} chargers">
                   <ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>
                   <div class="charger-info" aria-hidden="true">
                     <span class="charger-count">${l1Count}</span>
-                    <span class="charger-label">Level 1</span>
+                    <span class="charger-label">${t(this.hass, 'charger_level1')}</span>
                   </div>
                 </div>
               `
             : ''}
           ${l2Count > 0
             ? html`
-                <div class="charger-badge" role="group" aria-label="${l2Count} Level 2 chargers">
+                <div class="charger-badge" role="group" aria-label="${l2Count} ${t(this.hass, 'charger_level2')} chargers">
                   <ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>
                   <div class="charger-info" aria-hidden="true">
                     <span class="charger-count">${l2Count}</span>
-                    <span class="charger-label">Level 2</span>
+                    <span class="charger-label">${t(this.hass, 'charger_level2')}</span>
                   </div>
                 </div>
               `
             : ''}
           ${dcCount > 0
             ? html`
-                <div class="charger-badge fast" role="group" aria-label="${dcCount} DC Fast chargers">
+                <div class="charger-badge fast" role="group" aria-label="${dcCount} ${t(this.hass, 'charger_dc_fast')} chargers">
                   <ha-icon icon="mdi:flash" aria-hidden="true"></ha-icon>
                   <div class="charger-info" aria-hidden="true">
                     <span class="charger-count">${dcCount}</span>
-                    <span class="charger-label">DC Fast</span>
+                    <span class="charger-label">${t(this.hass, 'charger_dc_fast')}</span>
                   </div>
                 </div>
               `
@@ -706,7 +708,7 @@ export class GasBuddyCard extends LitElement {
         ${activeConnectors.length > 0
           ? html`
               <div>
-                <div class="connector-section-title">Connectors</div>
+                <div class="connector-section-title">${t(this.hass, 'connectors_heading')}</div>
                 <div class="connectors-grid">
                   ${activeConnectors.map((c) => {
                     const count = this.hass!.states[c.countId!]?.state || '0';
@@ -736,7 +738,7 @@ export class GasBuddyCard extends LitElement {
           ${networkName && networkName !== 'unknown' && networkName !== 'unavailable'
             ? html`
                 <div class="metadata-item">
-                  <span class="metadata-key">Network</span>
+                  <span class="metadata-key">${t(this.hass, 'meta_network')}</span>
                   <span
                     class="metadata-val network-name"
                     style="--gasbuddy-network-color: ${getNetworkColor(String(networkName))}"
@@ -751,7 +753,7 @@ export class GasBuddyCard extends LitElement {
           ${status && status !== 'unknown' && status !== 'unavailable'
             ? html`
                 <div class="metadata-item">
-                  <span class="metadata-key">Status</span>
+                  <span class="metadata-key">${t(this.hass, 'meta_status')}</span>
                   <span class="metadata-val">${String(status).toUpperCase()}</span>
                 </div>
               `
@@ -759,7 +761,7 @@ export class GasBuddyCard extends LitElement {
           ${pricing && pricing !== 'unknown' && pricing !== 'unavailable'
             ? html`
                 <div class="metadata-item">
-                  <span class="metadata-key">Pricing</span>
+                  <span class="metadata-key">${t(this.hass, 'meta_pricing')}</span>
                   <span class="metadata-val">${pricing}</span>
                 </div>
               `
@@ -767,7 +769,7 @@ export class GasBuddyCard extends LitElement {
           ${hours && hours !== 'unknown' && hours !== 'unavailable'
             ? html`
                 <div class="metadata-item">
-                  <span class="metadata-key">Access Hours</span>
+                  <span class="metadata-key">${t(this.hass, 'meta_access_hours')}</span>
                   <span class="metadata-val">${hours}</span>
                 </div>
               `
@@ -775,7 +777,7 @@ export class GasBuddyCard extends LitElement {
           ${acceptedCards && acceptedCards !== 'unknown' && acceptedCards !== 'unavailable'
             ? html`
                 <div class="metadata-item">
-                  <span class="metadata-key">Payments</span>
+                  <span class="metadata-key">${t(this.hass, 'meta_payments')}</span>
                   <span class="metadata-val">
                     ${(() => {
                       const icons = getPaymentIcons(String(acceptedCards));
@@ -790,7 +792,7 @@ export class GasBuddyCard extends LitElement {
           ${lastConfirmed && lastConfirmed !== 'unknown' && lastConfirmed !== 'unavailable'
             ? html`
                 <div class="metadata-item">
-                  <span class="metadata-key">Last Confirmed</span>
+                  <span class="metadata-key">${t(this.hass, 'meta_last_confirmed')}</span>
                   <span class="metadata-val">${formatTimestamp(lastConfirmed)}</span>
                 </div>
               `
