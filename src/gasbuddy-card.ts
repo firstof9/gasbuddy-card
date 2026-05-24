@@ -398,7 +398,11 @@ export class GasBuddyCard extends LitElement {
             </div>
           </div>
           <div
-            class="brand-logo ${currentTab === 'ev' && entities.ev_network ? 'brand-network' : ''}"
+            class="brand-logo ${currentTab === 'ev' && entities.ev_network
+              ? 'brand-network'
+              : !brandLogoUrl
+              ? 'brand-logo--icon'
+              : ''}"
             aria-hidden="true"
           >
             ${currentTab === 'ev' && entities.ev_network

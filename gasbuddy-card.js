@@ -96,6 +96,16 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
     line-height: 1;
   }
 
+  /* When the brand slot is just a generic icon (no station-brand image),
+     drop the white card framing — it clashes in dark themes. */
+  .brand-logo--icon {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    min-width: 0;
+    padding: 0;
+  }
+
   /* Mode Switcher Tabs */
   .tabs {
     display: flex;
@@ -438,7 +448,7 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
             </div>
           </div>
           <div
-            class="brand-logo ${"ev"===n&&s.ev_network?"brand-network":""}"
+            class="brand-logo ${"ev"===n&&s.ev_network?"brand-network":l?"":"brand-logo--icon"}"
             aria-hidden="true"
           >
             ${"ev"===n&&s.ev_network?function(e){const t=fe(e);return t?t.svgPath?B`
