@@ -1,0 +1,28 @@
+{
+  "name": "gasbuddy-card",
+  "version": "1.0.0",
+  "description": "Home Assistant GasBuddy Custom Card",
+  "main": "gasbuddy-card.js",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "build:watch": "rollup -c -w",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "author": "firstof9",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-terser": "^1.0.0",
+    "@rollup/plugin-typescript": "^12.1.0",
+    "@types/node": "^25.9.0",
+    "rollup": "^4.60.4",
+    "tslib": "^2.6.0",
+    "tsx": "^4.22.2",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "lit": "^3.3.3"
+  }
+}

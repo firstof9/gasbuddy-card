@@ -1,0 +1,6 @@
+node_modules/
+dist/
+gasbuddy-card.js.map
+.storage/
+.DS_Store
+*.log

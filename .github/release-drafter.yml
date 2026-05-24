@@ -1,0 +1,64 @@
+categories:
+  - title: '✨ Enhancements'
+    labels:
+      - 'enhancement'
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+      - 'feat'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bug'
+  - title: '📖 Documentation'
+    labels:
+      - 'docs'
+      - 'documentation'
+  - title: '🧰 Maintenance'
+    labels:
+      - 'chore'
+      - 'refactor'
+      - 'ci'
+  - title: '📦 Dependencies'
+    collapse-after: 2
+    labels:
+      - 'dependencies'
+
+# Auto-apply labels based on PR title (conventional commits) so the
+# categories above actually populate without anyone touching labels by
+# hand. Conventional-commit titles are already enforced by lint-pr-title.
+autolabeler:
+  - label: 'feature'
+    title:
+      - '/^feat(\(.+\))?:/i'
+  - label: 'fix'
+    title:
+      - '/^fix(\(.+\))?:/i'
+  - label: 'docs'
+    title:
+      - '/^docs(\(.+\))?:/i'
+  - label: 'chore'
+    title:
+      - '/^chore(\(.+\))?:/i'
+  - label: 'refactor'
+    title:
+      - '/^refactor(\(.+\))?:/i'
+  - label: 'ci'
+    title:
+      - '/^ci(\(.+\))?:/i'
+      - '/^build(\(.+\))?:/i'
+  - label: 'enhancement'
+    title:
+      - '/^perf(\(.+\))?:/i'
+  - label: 'chore'
+    title:
+      - '/^style(\(.+\))?:/i'
+      - '/^test(\(.+\))?:/i'
+  - label: 'dependencies'
+    title:
+      - '/^build\(deps\)(\(.+\))?:/i'
+      - '/^deps(\(.+\))?:/i'
+
+template: |
+  ## Changes
+  $CHANGES

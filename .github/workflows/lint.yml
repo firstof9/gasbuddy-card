@@ -1,0 +1,52 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    name: TypeScript type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm run typecheck
+
+  build:
+    name: Bundle build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm run build
+      - name: Verify committed bundle matches build output
+        run: |
+          # The committed gasbuddy-card.js must match what `npm run build`
+          # produces from src/. Fails CI if a PR forgot to rebuild.
+          if [ -n "$(git status --porcelain gasbuddy-card.js)" ]; then
+            echo "::error::gasbuddy-card.js is out of sync with src/. Run 'npm run build' and commit."
+            git diff gasbuddy-card.js
+            exit 1
+          fi
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm test
