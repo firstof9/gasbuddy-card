@@ -579,7 +579,7 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
                   <span class="metadata-val">
                     ${(()=>{const e=function(e){if(!e)return[];const t=e.toLowerCase().split(/[\s,;]+/).map(e=>e.trim()).filter(Boolean),s=[],i=new Set;for(const e of t)"v"!==e&&!e.includes("visa")||i.has("visa")?"m"!==e&&!e.includes("mastercard")&&!e.includes("master")||i.has("mastercard")?("a"===e||e.includes("american")||e.includes("express")||e.includes("amex"))&&!i.has("amex")?(s.push(z`
         <svg viewBox="0 0 36 24" width="36" height="24" class="payment-card-icon" title="American Express" role="img" aria-label="American Express accepted">
-          <rect width="36" height="24" rx="3" fill="#0070CD"/>
+          <rect width="36" height="24" rx="3" fill="#006FCF"/>
           <text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-weight="900" font-size="9" letter-spacing="0.5">AMEX</text>
         </svg>
       `),i.add("amex")):"d"!==e&&!e.includes("discover")||i.has("discover")?e.includes("debit")&&!i.has("debit")?(s.push(z`
