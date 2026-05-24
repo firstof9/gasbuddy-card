@@ -222,12 +222,12 @@ export class GasBuddyCard extends LitElement {
         <!-- Header -->
         <div class="header">
           <div class="header-text">
-            <div class="title ellipsis">${stationName}</div>
+            <div class="title ellipsis" role="heading" aria-level="2">${stationName}</div>
             <div class="subtitle ellipsis">
               ${stationAddress || 'GasBuddy Location'} ${distance ? `• ${distance}` : ''}
             </div>
           </div>
-          <div class="brand-logo">
+          <div class="brand-logo" aria-hidden="true">
             ${currentTab === 'ev' && entities.ev_network
               ? getNetworkLogo(this.hass.states[entities.ev_network]?.state || '')
               : brandLogoUrl
@@ -239,15 +239,19 @@ export class GasBuddyCard extends LitElement {
         <!-- Tab Switcher -->
         ${hasGas && hasEV
           ? html`
-              <div class="tabs">
+              <div class="tabs" role="tablist">
                 <button
                   class="tab ${currentTab === 'gas' ? 'active' : ''}"
+                  role="tab"
+                  aria-selected="${currentTab === 'gas' ? 'true' : 'false'}"
                   @click=${() => (this._activeTab = 'gas')}
                 >
                   Gas Prices
                 </button>
                 <button
                   class="tab ${currentTab === 'ev' ? 'active' : ''}"
+                  role="tab"
+                  aria-selected="${currentTab === 'ev' ? 'true' : 'false'}"
                   @click=${() => (this._activeTab = 'ev')}
                 >
                   EV Chargers
@@ -265,7 +269,7 @@ export class GasBuddyCard extends LitElement {
         <div class="footer">
           <div class="attribution">${attribution}</div>
           <div class="last-updated">
-            <ha-icon icon="mdi:clock-outline"></ha-icon>
+            <ha-icon icon="mdi:clock-outline" aria-hidden="true"></ha-icon>
             <span>
               Updated:
               ${entities.last_updated
@@ -321,27 +325,29 @@ export class GasBuddyCard extends LitElement {
           }
 
           return html`
-            <div class="price-card">
-              <div class="fuel-type">${grade.name}</div>
-              ${hasBoth
-                ? html`
-                    <div class="dual-prices">
-                      <div class="price-col">
-                        <span class="fuel-price">${creditPriceStr}</span>
-                        <span class="price-label">Credit</span>
+            <div class="price-card" role="group" aria-label="${grade.name} price: ${creditPriceStr && cashPriceStr ? `${creditPriceStr} Credit, ${cashPriceStr} Cash` : `${displayPrice} ${creditPriceStr ? 'Credit' : 'Cash'}`}">
+              <div aria-hidden="true">
+                <div class="fuel-type">${grade.name}</div>
+                ${hasBoth
+                  ? html`
+                      <div class="dual-prices">
+                        <div class="price-col">
+                          <span class="fuel-price">${creditPriceStr}</span>
+                          <span class="price-label">Credit</span>
+                        </div>
+                        <div class="price-col">
+                          <span class="fuel-price">${cashPriceStr}</span>
+                          <span class="price-label">Cash</span>
+                        </div>
                       </div>
-                      <div class="price-col">
-                        <span class="fuel-price">${cashPriceStr}</span>
-                        <span class="price-label">Cash</span>
-                      </div>
-                    </div>
-                  `
-                : html`
-                    <div class="fuel-price">${displayPrice}</div>
-                    <div class="price-label">${creditPriceStr ? 'Credit' : 'Cash'}</div>
-                  `}
-              <div class="fuel-meta">
-                <span>${unit || 'USD'}</span>
+                    `
+                  : html`
+                      <div class="fuel-price">${displayPrice}</div>
+                      <div class="price-label">${creditPriceStr ? 'Credit' : 'Cash'}</div>
+                    `}
+                <div class="fuel-meta">
+                  <span>${unit || 'USD'}</span>
+                </div>
               </div>
             </div>
           `;
@@ -385,9 +391,9 @@ export class GasBuddyCard extends LitElement {
         <div class="charger-summary">
           ${l1Count > 0
             ? html`
-                <div class="charger-badge">
-                  <ha-icon icon="mdi:ev-station"></ha-icon>
-                  <div class="charger-info">
+                <div class="charger-badge" role="group" aria-label="${l1Count} Level 1 chargers">
+                  <ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>
+                  <div class="charger-info" aria-hidden="true">
                     <span class="charger-count">${l1Count}</span>
                     <span class="charger-label">Level 1</span>
                   </div>
@@ -396,9 +402,9 @@ export class GasBuddyCard extends LitElement {
             : ''}
           ${l2Count > 0
             ? html`
-                <div class="charger-badge">
-                  <ha-icon icon="mdi:ev-station"></ha-icon>
-                  <div class="charger-info">
+                <div class="charger-badge" role="group" aria-label="${l2Count} Level 2 chargers">
+                  <ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>
+                  <div class="charger-info" aria-hidden="true">
                     <span class="charger-count">${l2Count}</span>
                     <span class="charger-label">Level 2</span>
                   </div>
@@ -407,9 +413,9 @@ export class GasBuddyCard extends LitElement {
             : ''}
           ${dcCount > 0
             ? html`
-                <div class="charger-badge fast">
-                  <ha-icon icon="mdi:flash"></ha-icon>
-                  <div class="charger-info">
+                <div class="charger-badge fast" role="group" aria-label="${dcCount} DC Fast chargers">
+                  <ha-icon icon="mdi:flash" aria-hidden="true"></ha-icon>
+                  <div class="charger-info" aria-hidden="true">
                     <span class="charger-count">${dcCount}</span>
                     <span class="charger-label">DC Fast</span>
                   </div>
@@ -427,12 +433,13 @@ export class GasBuddyCard extends LitElement {
                   ${activeConnectors.map((c) => {
                     const count = this.hass!.states[c.countId!]?.state || '0';
                     const power = c.powerId ? this.hass!.states[c.powerId]?.state : undefined;
+                    const hasPower = power && power !== 'unknown' && power !== 'unavailable';
                     return html`
-                      <div class="connector-card" style="border-color: rgba(var(--rgb-primary-color, 33, 150, 243), 0.2);">
-                        <div class="connector-name">${c.name}</div>
-                        <div class="connector-details">
+                      <div class="connector-card" style="border-color: rgba(var(--rgb-primary-color, 33, 150, 243), 0.2);" role="group" aria-label="${count} ${c.name} connectors${hasPower ? `, power capacity ${power} kilowatts` : ''}">
+                        <div class="connector-name" aria-hidden="true">${c.name}</div>
+                        <div class="connector-details" aria-hidden="true">
                           <span class="connector-count">${count}x</span>
-                          ${power && power !== 'unknown' && power !== 'unavailable'
+                          ${hasPower
                             ? html`<span class="connector-power">${power} kW</span>`
                             : ''}
                         </div>
