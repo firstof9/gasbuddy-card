@@ -474,15 +474,14 @@ export class GasBuddyCard extends LitElement {
         <!-- Footer -->
         <div class="footer">
           <div class="attribution">${attribution}</div>
-          <div class="last-updated">
-            <ha-icon icon="mdi:clock-outline" aria-hidden="true"></ha-icon>
-            <span>
-              Updated:
-              ${entities.last_updated
-                ? formatTimestamp(this.hass.states[entities.last_updated]?.state)
-                : 'Recent'}
-            </span>
-          </div>
+          ${entities.last_updated
+            ? html`
+                <div class="last-updated">
+                  <ha-icon icon="mdi:clock-outline" aria-hidden="true"></ha-icon>
+                  <span>Updated: ${formatTimestamp(this.hass.states[entities.last_updated]?.state)}</span>
+                </div>
+              `
+            : ''}
         </div>
       </ha-card>
     `;
