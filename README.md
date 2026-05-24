@@ -68,14 +68,29 @@ title: "My Local Station"     # Optional: Custom card title override
 
 ## Advanced configuration
 
-If you need to override individual sensors discovered automatically by the device ID, you can supply their entity IDs explicitly:
+If you need to override individual sensors discovered automatically by the device ID, you can supply their entity IDs explicitly. The card supports a wide variety of specific sensor overrides.
+
+### Supported Overrides
+
+#### Fuel Price Entities
+You can override any of these by appending `_entity` (e.g., `regular_gas_entity`):
+- `regular_gas`, `midgrade_gas`, `premium_gas`, `diesel`
+- `regular_gas_cash`, `midgrade_gas_cash`, `premium_gas_cash`, `diesel_cash`
+- `e85`, `e85_cash`, `e15`, `e15_cash`
+- `last_updated`
+
+#### EV Sensor Entities
+You can override any of these by appending `_entity` (e.g., `ev_dc_fast_entity`):
+- **Chargers:** `ev_level1`, `ev_level2`, `ev_dc_fast`
+- **Connectors:** `ev_j1772`, `ev_j1772_power`, `ev_ccs`, `ev_ccs_power`, `ev_chademo`, `ev_chademo_power`, `ev_nacs`, `ev_nacs_power`
+- **Metadata:** `ev_network`, `ev_pricing`, `ev_access_hours`, `ev_status`, `ev_cards_accepted`, `ev_date_last_confirmed`
 
 ```yaml
 type: custom:gasbuddy-card
 device_id: 32_character_device_registry_id
 regular_gas_entity: sensor.other_regular_gas_sensor
-premium_gas_entity: sensor.other_premium_gas_sensor
 ev_dc_fast_entity: sensor.other_ev_dc_fast_chargers
+ev_cards_accepted_entity: sensor.other_ev_payment_methods
 ```
 
 ### Full Configuration Options
@@ -86,8 +101,8 @@ ev_dc_fast_entity: sensor.other_ev_dc_fast_chargers
 | `device_id` | string | **Required** | The device registry ID of the GasBuddy station. |
 | `title` | string | Optional | Custom title header of the card. |
 | `default_mode` | string | `gas` | Default active tab to display. Options: `gas`, `ev`. |
-| `[fuel_type]_entity` | string | Auto-discovered | Manual override for specific fuel price sensors. |
-| `[ev_sensor]_entity` | string | Auto-discovered | Manual override for specific EV charger status/connector sensors. |
+| `<fuel_type>_entity` | string | Auto-discovered | Manual override for specific fuel price sensors. |
+| `<ev_sensor>_entity` | string | Auto-discovered | Manual override for specific EV charger status/connector sensors. |
 
 ## Development
 
