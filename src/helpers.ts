@@ -295,6 +295,15 @@ export function getPaymentIcons(cardsString: string): TemplateResult[] {
         </svg>
       `);
       added.add('debit');
+    } else if (token.includes('credit') && !added.has('credit')) {
+      icons.push(html`
+        <svg viewBox="0 0 36 24" width="36" height="24" class="payment-card-icon" title="Credit Card">
+          <rect width="36" height="24" rx="3" fill="#4B5563"/>
+          <rect x="4" y="8" width="6" height="5" rx="1" fill="#FFD700"/>
+          <text x="21" y="65%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-weight="bold" font-size="7">CREDIT</text>
+        </svg>
+      `);
+      added.add('credit');
     }
   }
 
