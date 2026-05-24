@@ -26,19 +26,7 @@ const SCHEMA: HaFormSchemaEntry[] = [
     helper: 'Custom title shown at the top of the card. Falls back to the station name.',
     selector: { text: {} },
   },
-  {
-    name: 'default_mode',
-    label: 'Default Tab',
-    helper: 'Which tab to show by default when the card loads.',
-    selector: {
-      select: {
-        options: [
-          { value: 'gas', label: 'Gas Prices' },
-          { value: 'ev', label: 'EV Chargers' },
-        ],
-      },
-    },
-  },
+
   // Overrides section
   {
     name: 'regular_gas_entity',
