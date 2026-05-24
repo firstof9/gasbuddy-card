@@ -310,24 +310,24 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
             Please select a GasBuddy Device in the card configuration editor.
           </div>
         </ha-card>
-      `;const t=function(e,t){const s={};if(!e||!t)return s;let i=[];if(e.entities&&(i=Object.values(e.entities).filter(e=>e.device_id===t).map(e=>e.entity_id)),0===i.length){const s=Object.keys(e.states);for(const a of s){const s=e.states[a];s&&s.attributes&&s.attributes.station_id&&String(s.attributes.station_id)===String(t)&&i.push(a)}}const a={regular_gas:["_regular_gas"],midgrade_gas:["_midgrade_gas"],premium_gas:["_premium_gas"],diesel:["_diesel"],regular_gas_cash:["_regular_gas_cash"],midgrade_gas_cash:["_midgrade_gas_cash"],premium_gas_cash:["_premium_gas_cash"],diesel_cash:["_diesel_cash"],e85:["_e85"],e85_cash:["_e85_cash"],e15:["_unl88","_e15_gas","_e15"],e15_cash:["_unl88_cash","_e15_gas_cash","_e15_cash"],last_updated:["_last_updated"],ev_level1:["_ev_level_1_chargers","_ev_level1"],ev_level2:["_ev_level_2_chargers","_ev_level2"],ev_dc_fast:["_ev_dc_fast_chargers","_ev_dc_fast"],ev_j1772:["_ev_j1772_connectors","_ev_j1772"],ev_j1772_power:["_ev_j1772_connector_power","_ev_j1772_power"],ev_ccs:["_ev_ccs_connectors","_ev_ccs"],ev_ccs_power:["_ev_ccs_connector_power","_ev_ccs_power"],ev_chademo:["_ev_chademo_connectors","_ev_chademo"],ev_chademo_power:["_ev_chademo_connector_power","_ev_chademo_power"],ev_nacs:["_ev_nacs_connectors","_ev_nacs"],ev_nacs_power:["_ev_nacs_connector_power","_ev_nacs_power"],ev_status:["_ev_station_status","_ev_status"],ev_network:["_ev_charging_network","_ev_network"],ev_pricing:["_ev_charging_pricing","_ev_pricing"],ev_access_hours:["_ev_access_hours"],ev_cards_accepted:["_ev_payment_accepted","_ev_cards_accepted"],ev_date_last_confirmed:["_ev_last_confirmed","_ev_date_last_confirmed"]};for(const e of i){const t=e.toLowerCase();for(const[i,r]of Object.entries(a))if(r.some(e=>t.endsWith(e))){s[i]=e;break}}return s}(this.hass,e),s={regular_gas:this._config.regular_gas_entity||t.regular_gas,midgrade_gas:this._config.midgrade_gas_entity||t.midgrade_gas,premium_gas:this._config.premium_gas_entity||t.premium_gas,diesel:this._config.diesel_entity||t.diesel,regular_gas_cash:this._config.regular_gas_cash_entity||t.regular_gas_cash,midgrade_gas_cash:this._config.midgrade_gas_cash_entity||t.midgrade_gas_cash,premium_gas_cash:this._config.premium_gas_cash_entity||t.premium_gas_cash,diesel_cash:this._config.diesel_cash_entity||t.diesel_cash,e85:this._config.e85_entity||t.e85,e85_cash:this._config.e85_cash_entity||t.e85_cash,e15:this._config.e15_entity||t.e15,e15_cash:this._config.e15_cash_entity||t.e15_cash,last_updated:this._config.last_updated_entity||t.last_updated,ev_level1:this._config.ev_level1_entity||t.ev_level1,ev_level2:this._config.ev_level2_entity||t.ev_level2,ev_dc_fast:this._config.ev_dc_fast_entity||t.ev_dc_fast,ev_j1772:this._config.ev_j1772_entity||t.ev_j1772,ev_j1772_power:this._config.ev_j1772_power_entity||t.ev_j1772_power,ev_ccs:this._config.ev_ccs_entity||t.ev_ccs,ev_ccs_power:this._config.ev_ccs_power_entity||t.ev_ccs_power,ev_chademo:this._config.ev_chademo_entity||t.ev_chademo,ev_chademo_power:this._config.ev_chademo_power_entity||t.ev_chademo_power,ev_nacs:this._config.ev_nacs_entity||t.ev_nacs,ev_nacs_power:this._config.ev_nacs_power_entity||t.ev_nacs_power,ev_status:this._config.ev_status_entity||t.ev_status,ev_network:this._config.ev_network_entity||t.ev_network,ev_pricing:this._config.ev_pricing_entity||t.ev_pricing,ev_access_hours:this._config.ev_access_hours_entity||t.ev_access_hours,ev_cards_accepted:this._config.ev_cards_accepted_entity||t.ev_cards_accepted,ev_date_last_confirmed:this._config.ev_date_last_confirmed_entity||t.ev_date_last_confirmed},i=!!(s.regular_gas||s.midgrade_gas||s.premium_gas||s.diesel),a=!!(s.ev_level2||s.ev_dc_fast||s.ev_network);if(!i&&!a)return I`
+      `;const t=function(e,t){const s={};if(!e||!t)return s;let i=[];if(e.entities&&(i=Object.values(e.entities).filter(e=>e.device_id===t).map(e=>e.entity_id)),0===i.length){const s=Object.keys(e.states);for(const a of s){const s=e.states[a];s&&s.attributes&&s.attributes.station_id&&String(s.attributes.station_id)===String(t)&&i.push(a)}}const a={regular_gas:["_regular_gas"],midgrade_gas:["_midgrade_gas"],premium_gas:["_premium_gas"],diesel:["_diesel"],regular_gas_cash:["_regular_gas_cash"],midgrade_gas_cash:["_midgrade_gas_cash"],premium_gas_cash:["_premium_gas_cash"],diesel_cash:["_diesel_cash"],e85:["_e85"],e85_cash:["_e85_cash"],e15:["_unl88","_e15_gas","_e15"],e15_cash:["_unl88_cash","_e15_gas_cash","_e15_cash"],last_updated:["_last_updated"],ev_level1:["_ev_level_1_chargers","_ev_level1"],ev_level2:["_ev_level_2_chargers","_ev_level2"],ev_dc_fast:["_ev_dc_fast_chargers","_ev_dc_fast"],ev_j1772:["_ev_j1772_connectors","_ev_j1772"],ev_j1772_power:["_ev_j1772_connector_power","_ev_j1772_power"],ev_ccs:["_ev_ccs_connectors","_ev_ccs"],ev_ccs_power:["_ev_ccs_connector_power","_ev_ccs_power"],ev_chademo:["_ev_chademo_connectors","_ev_chademo"],ev_chademo_power:["_ev_chademo_connector_power","_ev_chademo_power"],ev_nacs:["_ev_nacs_connectors","_ev_nacs"],ev_nacs_power:["_ev_nacs_connector_power","_ev_nacs_power"],ev_status:["_ev_station_status","_ev_status"],ev_network:["_ev_charging_network","_ev_network"],ev_pricing:["_ev_charging_pricing","_ev_pricing"],ev_access_hours:["_ev_access_hours"],ev_cards_accepted:["_ev_payment_accepted","_ev_cards_accepted"],ev_date_last_confirmed:["_ev_last_confirmed","_ev_date_last_confirmed"]};for(const e of i){const t=e.toLowerCase();for(const[i,r]of Object.entries(a))if(r.some(e=>t.endsWith(e))){s[i]=e;break}}return s}(this.hass,e),s={regular_gas:this._config.regular_gas_entity||t.regular_gas,midgrade_gas:this._config.midgrade_gas_entity||t.midgrade_gas,premium_gas:this._config.premium_gas_entity||t.premium_gas,diesel:this._config.diesel_entity||t.diesel,regular_gas_cash:this._config.regular_gas_cash_entity||t.regular_gas_cash,midgrade_gas_cash:this._config.midgrade_gas_cash_entity||t.midgrade_gas_cash,premium_gas_cash:this._config.premium_gas_cash_entity||t.premium_gas_cash,diesel_cash:this._config.diesel_cash_entity||t.diesel_cash,e85:this._config.e85_entity||t.e85,e85_cash:this._config.e85_cash_entity||t.e85_cash,e15:this._config.e15_entity||t.e15,e15_cash:this._config.e15_cash_entity||t.e15_cash,last_updated:this._config.last_updated_entity||t.last_updated,ev_level1:this._config.ev_level1_entity||t.ev_level1,ev_level2:this._config.ev_level2_entity||t.ev_level2,ev_dc_fast:this._config.ev_dc_fast_entity||t.ev_dc_fast,ev_j1772:this._config.ev_j1772_entity||t.ev_j1772,ev_j1772_power:this._config.ev_j1772_power_entity||t.ev_j1772_power,ev_ccs:this._config.ev_ccs_entity||t.ev_ccs,ev_ccs_power:this._config.ev_ccs_power_entity||t.ev_ccs_power,ev_chademo:this._config.ev_chademo_entity||t.ev_chademo,ev_chademo_power:this._config.ev_chademo_power_entity||t.ev_chademo_power,ev_nacs:this._config.ev_nacs_entity||t.ev_nacs,ev_nacs_power:this._config.ev_nacs_power_entity||t.ev_nacs_power,ev_status:this._config.ev_status_entity||t.ev_status,ev_network:this._config.ev_network_entity||t.ev_network,ev_pricing:this._config.ev_pricing_entity||t.ev_pricing,ev_access_hours:this._config.ev_access_hours_entity||t.ev_access_hours,ev_cards_accepted:this._config.ev_cards_accepted_entity||t.ev_cards_accepted,ev_date_last_confirmed:this._config.ev_date_last_confirmed_entity||t.ev_date_last_confirmed},i=e=>{if(!e)return!1;const t=this.hass.states[e];return t&&"unavailable"!==t.state&&"unknown"!==t.state},a=[s.regular_gas,s.midgrade_gas,s.premium_gas,s.diesel,s.regular_gas_cash,s.midgrade_gas_cash,s.premium_gas_cash,s.diesel_cash,s.e15,s.e15_cash,s.e85,s.e85_cash].some(i),r=[s.ev_level1,s.ev_level2,s.ev_dc_fast,s.ev_j1772,s.ev_ccs,s.ev_chademo,s.ev_nacs,s.ev_network].some(i);if(!a&&!r)return I`
         <ha-card>
           <div style="padding: 16px; color: var(--secondary-text-color);">
             No active sensors found for this GasBuddy device. Verify that the integration has loaded data successfully.
           </div>
         </ha-card>
-      `;let r=this._activeTab;i&&!a&&(r="gas"),a&&!i&&(r="ev");const n=s.regular_gas||s.ev_level2||s.ev_dc_fast||s.last_updated,o=n?this.hass.states[n]:void 0;let c="Gas Station",l="",d="",h="",_="GasBuddy";if(o&&o.attributes){const e=o.attributes;if(_=e.attribution||"GasBuddy","ev"===r&&e.station_name)c=String(e.station_name),l=String(e.station_address||"");else{c=(e.friendly_name||"").replace(/\s(Regular|Midgrade|Premium|Diesel|Last Updated|EV Level|EV DC|EV CCS|EV NACS|EV CHAdeMO|EV J1772).*/i,"").trim()}void 0!==e.distance_miles&&(d=function(e){if(null==e||"unknown"===e||"unavailable"===e)return"";const t=Number(e);return isNaN(t)?String(e):`${t.toFixed(1)} mi`}(e.distance_miles)),o.attributes.entity_picture&&(h=o.attributes.entity_picture)}return this._config.title&&(c=this._config.title),I`
+      `;let n=this._activeTab;a&&!r&&(n="gas"),r&&!a&&(n="ev");const o=s.regular_gas||s.ev_level2||s.ev_dc_fast||s.last_updated,c=o?this.hass.states[o]:void 0;let l="Gas Station",d="",h="",_="",p="GasBuddy";if(c&&c.attributes){const e=c.attributes;if(p=e.attribution||"GasBuddy","ev"===n&&e.station_name)l=String(e.station_name),d=String(e.station_address||"");else{l=(e.friendly_name||"").replace(/\s(Regular|Midgrade|Premium|Diesel|Last Updated|EV Level|EV DC|EV CCS|EV NACS|EV CHAdeMO|EV J1772).*/i,"").trim()}void 0!==e.distance_miles&&(h=function(e){if(null==e||"unknown"===e||"unavailable"===e)return"";const t=Number(e);return isNaN(t)?String(e):`${t.toFixed(1)} mi`}(e.distance_miles)),c.attributes.entity_picture&&(_=c.attributes.entity_picture)}return this._config.title&&(l=this._config.title),I`
       <ha-card>
         <!-- Header -->
         <div class="header">
           <div class="header-text">
-            <div class="title ellipsis">${c}</div>
+            <div class="title ellipsis">${l}</div>
             <div class="subtitle ellipsis">
-              ${l||"GasBuddy Location"} ${d?`• ${d}`:""}
+              ${d||"GasBuddy Location"} ${h?`• ${h}`:""}
             </div>
           </div>
           <div class="brand-logo">
-            ${"ev"===r&&s.ev_network?function(e){if(!e)return I`<ha-icon icon="mdi:ev-station"></ha-icon>`;const t=e.toLowerCase();return t.includes("tesla")?I`
+            ${"ev"===n&&s.ev_network?function(e){if(!e)return I`<ha-icon icon="mdi:ev-station"></ha-icon>`;const t=e.toLowerCase();return t.includes("tesla")?I`
       <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #cc0000;">
         <path d="M12,2C11.5,2 10,4.8 9.8,5.7C10.7,5.5 11.5,5.4 12,5.4C12.5,5.4 13.3,5.5 14.2,5.7C14,4.8 12.5,2 12,2M12,6.8C10.5,6.8 8.8,7.3 7,8.2C6.9,8.5 6.8,8.8 6.8,9C8.3,8.2 10.3,7.8 12,7.8C13.7,7.8 15.7,8.2 17.2,9C17.2,8.8 17.1,8.5 17,8.2C15.2,7.3 13.5,6.8 12,6.8M7.2,10.2C7.1,10.5 7,10.9 7,11.2C8.7,10.5 10.5,10.2 12,10.2C13.5,10.2 15.3,10.5 17,11.2C17,10.9 16.9,10.5 16.8,10.2C15.2,9.6 13.5,9.2 12,9.2C10.5,9.2 8.8,9.6 7.2,10.2M12,11.5C10.2,11.5 8.2,12 6.5,12.8C6.5,13.2 6.5,13.5 6.5,13.8C8,12.8 10.2,12.4 12,12.4C13.8,12.4 16,12.8 17.5,13.8C17.5,13.5 17.5,13.2 17.5,12.8C15.8,12 13.8,11.5 12,11.5M12,14.5C10.8,14.5 9.5,14.7 8.2,15.1L8.2,22C8.2,22 12,21.5 12,20.5L12,15.5C12,15.5 12,14.5 12,14.5Z"/>
       </svg>
@@ -363,21 +363,21 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
         <path d="M12,2 A10,10 0 0,0 2,12 A10,10 0 0,0 12,22 A10,10 0 0,0 22,12 A10,10 0 0,0 12,2 M12,4 C15.5,4 18,6.5 18,10 C18,14.5 12,20 12,20 C12,20 6,14.5 6,10 C6,6.5 8.5,4 12,4 Z" />
         <circle cx="12" cy="10" r="3" fill="#d00000"/>
       </svg>
-    `:I`<ha-icon icon="mdi:ev-station"></ha-icon>`}(this.hass.states[s.ev_network]?.state||""):h?I`<img src="${h}" alt="Brand logo" />`:I`<ha-icon icon="mdi:gas-station"></ha-icon>`}
+    `:I`<ha-icon icon="mdi:ev-station"></ha-icon>`}(this.hass.states[s.ev_network]?.state||""):_?I`<img src="${_}" alt="Brand logo" />`:I`<ha-icon icon="mdi:gas-station"></ha-icon>`}
           </div>
         </div>
 
         <!-- Tab Switcher -->
-        ${i&&a?I`
+        ${a&&r?I`
               <div class="tabs">
                 <button
-                  class="tab ${"gas"===r?"active":""}"
+                  class="tab ${"gas"===n?"active":""}"
                   @click=${()=>this._activeTab="gas"}
                 >
                   Gas Prices
                 </button>
                 <button
-                  class="tab ${"ev"===r?"active":""}"
+                  class="tab ${"ev"===n?"active":""}"
                   @click=${()=>this._activeTab="ev"}
                 >
                   EV Chargers
@@ -387,12 +387,12 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
 
         <!-- Tab Content -->
         <div class="tab-content">
-          ${"gas"===r?this._renderGasContent(s):this._renderEVContent(s)}
+          ${"gas"===n?this._renderGasContent(s):this._renderEVContent(s)}
         </div>
 
         <!-- Footer -->
         <div class="footer">
-          <div class="attribution">${_}</div>
+          <div class="attribution">${p}</div>
           <div class="last-updated">
             <ha-icon icon="mdi:clock-outline"></ha-icon>
             <span>

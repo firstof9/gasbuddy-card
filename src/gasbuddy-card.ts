@@ -125,9 +125,38 @@ export class GasBuddyCard extends LitElement {
       ev_date_last_confirmed: this._config.ev_date_last_confirmed_entity || discovered.ev_date_last_confirmed,
     };
 
-    // Check availability of gas vs EV options
-    const hasGas = !!(entities.regular_gas || entities.midgrade_gas || entities.premium_gas || entities.diesel);
-    const hasEV = !!(entities.ev_level2 || entities.ev_dc_fast || entities.ev_network);
+    // Check availability of gas vs EV options by verifying states are active (not unavailable/unknown)
+    const isAvailable = (entityId?: string) => {
+      if (!entityId) return false;
+      const stateObj = this.hass!.states[entityId];
+      return stateObj && stateObj.state !== 'unavailable' && stateObj.state !== 'unknown';
+    };
+
+    const hasGas = [
+      entities.regular_gas,
+      entities.midgrade_gas,
+      entities.premium_gas,
+      entities.diesel,
+      entities.regular_gas_cash,
+      entities.midgrade_gas_cash,
+      entities.premium_gas_cash,
+      entities.diesel_cash,
+      entities.e15,
+      entities.e15_cash,
+      entities.e85,
+      entities.e85_cash,
+    ].some(isAvailable);
+
+    const hasEV = [
+      entities.ev_level1,
+      entities.ev_level2,
+      entities.ev_dc_fast,
+      entities.ev_j1772,
+      entities.ev_ccs,
+      entities.ev_chademo,
+      entities.ev_nacs,
+      entities.ev_network,
+    ].some(isAvailable);
 
     if (!hasGas && !hasEV) {
       return html`
