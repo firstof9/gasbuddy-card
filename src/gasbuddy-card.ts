@@ -124,13 +124,7 @@ export class GasBuddyCard extends LitElement {
       ev_date_last_confirmed: this._config.ev_date_last_confirmed_entity || discovered.ev_date_last_confirmed,
     };
 
-    console.log("GasBuddy Card - Configured Entities:", entities);
-    for (const [key, entityId] of Object.entries(entities)) {
-      if (entityId) {
-        const stateObj = this.hass.states[entityId];
-        console.log(`GasBuddy Card - Entity ${key} (${entityId}) state:`, stateObj ? { state: stateObj.state, attrs: stateObj.attributes } : "NOT FOUND IN HASS.STATES");
-      }
-    }
+
 
     // Check availability of gas vs EV options by verifying states are active (not unavailable/unknown)
     const isAvailable = (entityId?: string) => {
