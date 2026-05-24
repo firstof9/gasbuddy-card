@@ -1,0 +1,33 @@
+name: Autolabeler
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions: {}
+
+concurrency:
+  group: ${{ format('al-{0}-pr-{1}', github.event_name, github.event.pull_request.number) }}
+  cancel-in-progress: true
+
+jobs:
+  autolabel:
+    name: Autolabel PR
+    if: >
+      (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.fork) ||
+      (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork)
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@cb2c1133c9177653427e890f9da66cdb4db8b2e2 # v2.10.4
+        with:
+          egress-policy: audit
+
+      - uses: release-drafter/release-drafter/autolabeler@c2e2804cc59f45f57076a99af580d0fedb697927 # v7.3.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
