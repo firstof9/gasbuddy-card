@@ -1,54 +1,65 @@
-# GasBuddy Lovelace Card
+# GasBuddy Card
 
-A premium, modern Home Assistant Lovelace custom card for displaying gas prices and EV charging station data fetched by the [GasBuddy integration](https://github.com/firstof9/ha-gasbuddy).
+[![GitHub Release](https://img.shields.io/github/v/release/firstof9/gasbuddy-card?style=for-the-badge)](https://github.com/firstof9/gasbuddy-card/releases)
+[![GitHub Downloads](https://img.shields.io/github/downloads/firstof9/gasbuddy-card/total?style=for-the-badge)](https://github.com/firstof9/gasbuddy-card/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/firstof9/gasbuddy-card/lint.yml?branch=main&label=CI&style=for-the-badge)](https://github.com/firstof9/gasbuddy-card/actions/workflows/lint.yml)
+[![HACS Badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
+[![License](https://img.shields.io/github/license/firstof9/gasbuddy-card?style=for-the-badge)](https://github.com/firstof9/gasbuddy-card/blob/main/LICENSE)
 
-The card features automatic entity discovery based on a chosen GasBuddy station device and displays both fuel prices and charging details in a responsive, visually appealing grid layout.
+A modern, premium Home Assistant custom Lovelace card for displaying gas prices and EV charging station data fetched from the [GasBuddy custom integration](https://github.com/firstof9/ha-gasbuddy).
 
-## Features
+## Screenshots
 
-- **Automatic Entity Discovery:** Select a GasBuddy station device in the Lovelace card editor, and the card will automatically find and configure all related sensors.
-- **Hybrid View:** Seamlessly toggle between **Gas Prices** and **EV Chargers** at stations that offer both services. If only one service is configured or available, the tab bar hides and displays only the active service.
-- **Vibrant Fuel Grid:** Displays Regular, Midgrade, Premium, Diesel, UNL88, and E85. Shows cash vs credit prices side-by-side on each card where available.
-- **Detailed EV Panel:** Shows charger counts (Level 1, Level 2, DC Fast), connector counts/power ratings (J1772, CCS, CHAdeMO, NACS), pricing, network name, access hours, accepted payments, and last confirmed timestamp.
-- **Custom Brand Mappings:** Renders custom inline brand SVGs for major charging networks (Tesla, ChargePoint, EVgo, Electrify America, FLO, Blink, Shell Recharge) and brand logos for fuel brands where configured.
-- **Manual Overrides:** Allows explicit override of individual sensors in the card editor if needed.
+### Gas Prices View
+![Gas Prices State](screenshots/gas_prices.png)
+
+### EV Chargers View
+![EV Chargers State](screenshots/ev_chargers.png)
+
+### Visual Configuration
+![Configuration Editor](screenshots/config.png)
+
+## Requirements
+
+This card requires the **[GasBuddy custom integration](https://github.com/firstof9/ha-gasbuddy)** to be installed and configured in Home Assistant.
 
 ## Installation
 
-### Via HACS (Home Assistant Community Store)
+### HACS (Recommended)
 
-1. Open HACS in your Home Assistant instance.
-2. Click the three dots in the top-right corner and select **Custom repositories**.
-3. Paste the URL of this repository: `https://github.com/firstof9/gasbuddy-card`
-4. Set the category to **Lovelace** and click **Add**.
-5. Find the **GasBuddy Card** in the HACS interface, click **Download**, and restart your frontend if prompted.
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=firstof9&repository=gasbuddy-card&category=plugin)
 
-### Manual Installation
+1. Open HACS.
+2. Click on "Frontend".
+3. Click on the three dots in the top right corner and select "Custom repositories".
+4. Add `https://github.com/firstof9/gasbuddy-card` with category "Lovelace".
+5. Search for "GasBuddy Card" and click "Download".
 
-1. Build the card locally or download `gasbuddy-card.js` from the latest release.
-2. Copy `gasbuddy-card.js` into your `<config-dir>/www/` directory.
-3. Add a reference to the card in your Lovelace resources (Settings -> Dashboards -> Resources):
-   - **URL:** `/local/gasbuddy-card.js`
-   - **Type:** `JavaScript Module`
+### Manual
 
-## Configuration
+1. Download `gasbuddy-card.js` from the latest release (it's a single self-contained bundle).
+2. Copy it to your `config/www/` directory.
+3. Add the following to your `configuration.yaml` or through the UI:
+   ```yaml
+   resources:
+     - url: /local/gasbuddy-card.js
+       type: module
+   ```
 
-### Lovelace UI (Visual Editor)
+## Usage
 
-This card comes with a full interactive configuration editor. Add the card to your dashboard, and use the UI to select your GasBuddy station device and manage overrides.
-
-### YAML Configuration
+The card uses your GasBuddy device ID (from the integration device registry) to automatically discover and display the station name, coordinates, fuel prices, and EV charger states.
 
 ```yaml
 type: custom:gasbuddy-card
 device_id: 32_character_device_registry_id_from_hacs_gasbuddy
-title: "My Local Shell"       # Optional card title
-default_mode: gas             # Optional default tab ('gas' or 'ev')
+default_mode: gas             # Optional: 'gas' or 'ev' (defaults to 'gas')
+title: "My Local Station"     # Optional: Custom card title override
 ```
 
-#### Sensor Overrides (Optional)
+## Advanced configuration
 
-If you wish to manually override individual sensors:
+If you need to override individual sensors discovered automatically by the device ID, you can supply their entity IDs explicitly:
 
 ```yaml
 type: custom:gasbuddy-card
@@ -58,6 +69,27 @@ premium_gas_entity: sensor.other_premium_gas_sensor
 ev_dc_fast_entity: sensor.other_ev_dc_fast_chargers
 ```
 
-## License
+### Full Configuration Options
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `type` | string | **Required** | Must be `custom:gasbuddy-card`. |
+| `device_id` | string | **Required** | The device registry ID of the GasBuddy station. |
+| `title` | string | Optional | Custom title header of the card. |
+| `default_mode` | string | `gas` | Default active tab to display. Options: `gas`, `ev`. |
+| `[fuel_type]_entity` | string | Auto-discovered | Manual override for specific fuel price sensors. |
+| `[ev_sensor]_entity` | string | Auto-discovered | Manual override for specific EV charger status/connector sensors. |
+
+## Development
+
+The card is written in TypeScript with [Lit](https://lit.dev) and bundled with [Rollup](https://rollupjs.org). Source lives in `src/`; the committed `gasbuddy-card.js` at the repo root is the bundled output.
+
+```bash
+npm install        # install dev deps + lit
+npm run typecheck  # tsc --noEmit (no JS emit, just type checking)
+npm test           # run placeholder test script
+npm run build      # produce gasbuddy-card.js from src/
+npm run build:watch  # rebuild on every save while iterating
+```
+
+CI runs `typecheck`, `build`, and `test` on every PR. The `build` job also fails CI if the committed bundle is out of sync with source.
