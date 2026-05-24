@@ -382,6 +382,17 @@ export class GasBuddyCard extends LitElement {
       <div class="ev-section">
         <!-- Charger Badge Summary -->
         <div class="charger-summary">
+          ${l1Count > 0
+            ? html`
+                <div class="charger-badge">
+                  <ha-icon icon="mdi:ev-station"></ha-icon>
+                  <div class="charger-info">
+                    <span class="charger-count">${l1Count}</span>
+                    <span class="charger-label">Level 1</span>
+                  </div>
+                </div>
+              `
+            : ''}
           ${l2Count > 0
             ? html`
                 <div class="charger-badge">
@@ -400,17 +411,6 @@ export class GasBuddyCard extends LitElement {
                   <div class="charger-info">
                     <span class="charger-count">${dcCount}</span>
                     <span class="charger-label">DC Fast</span>
-                  </div>
-                </div>
-              `
-            : ''}
-          ${l1Count > 0 && l2Count === 0 && dcCount === 0
-            ? html`
-                <div class="charger-badge">
-                  <ha-icon icon="mdi:ev-station"></ha-icon>
-                  <div class="charger-info">
-                    <span class="charger-count">${l1Count}</span>
-                    <span class="charger-label">Level 1</span>
                   </div>
                 </div>
               `

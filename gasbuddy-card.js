@@ -471,6 +471,15 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
       <div class="ev-section">
         <!-- Charger Badge Summary -->
         <div class="charger-summary">
+          ${a>0?I`
+                <div class="charger-badge">
+                  <ha-icon icon="mdi:ev-station"></ha-icon>
+                  <div class="charger-info">
+                    <span class="charger-count">${a}</span>
+                    <span class="charger-label">Level 1</span>
+                  </div>
+                </div>
+              `:""}
           ${r>0?I`
                 <div class="charger-badge">
                   <ha-icon icon="mdi:ev-station"></ha-icon>
@@ -486,15 +495,6 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
                   <div class="charger-info">
                     <span class="charger-count">${n}</span>
                     <span class="charger-label">DC Fast</span>
-                  </div>
-                </div>
-              `:""}
-          ${a>0&&0===r&&0===n?I`
-                <div class="charger-badge">
-                  <ha-icon icon="mdi:ev-station"></ha-icon>
-                  <div class="charger-info">
-                    <span class="charger-count">${a}</span>
-                    <span class="charger-label">Level 1</span>
                   </div>
                 </div>
               `:""}
