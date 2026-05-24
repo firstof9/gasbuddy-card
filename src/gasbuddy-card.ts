@@ -172,13 +172,6 @@ export class GasBuddyCard extends LitElement {
     if (hasGas && !hasEV) currentTab = 'gas';
     if (hasEV && !hasGas) currentTab = 'ev';
 
-    // Retrieve Station Metadata from first available state object
-    const sampleEntity =
-      entities.regular_gas ||
-      entities.ev_level2 ||
-      entities.ev_dc_fast ||
-      entities.last_updated;
-    const sampleStateObj = sampleEntity ? this.hass.states[sampleEntity] : undefined;
 
     let stationName = 'Gas Station';
     let stationAddress = '';
@@ -186,35 +179,42 @@ export class GasBuddyCard extends LitElement {
     let brandLogoUrl = '';
     let attribution = 'GasBuddy';
 
-    if (sampleStateObj && sampleStateObj.attributes) {
-      const attrs = sampleStateObj.attributes;
-      attribution = attrs.attribution || 'GasBuddy';
+    // Scan all resolved entities to compile the most complete station metadata
+    for (const entityId of Object.values(entities)) {
+      if (!entityId) continue;
+      const stateObj = this.hass.states[entityId];
+      if (stateObj && stateObj.attributes) {
+        const attrs = stateObj.attributes;
+        if (attrs.attribution && attribution === 'GasBuddy') {
+          attribution = attrs.attribution;
+        }
+        if (attrs.station_name && stationName === 'Gas Station') {
+          stationName = String(attrs.station_name);
+        }
+        if (attrs.station_address && !stationAddress) {
+          stationAddress = String(attrs.station_address);
+        } else if (attrs.street_address && !stationAddress) {
+          stationAddress = String(attrs.street_address);
+        }
+        if (attrs.distance_miles !== undefined && !distance) {
+          distance = formatDistance(attrs.distance_miles);
+        }
+        if (attrs.entity_picture && !brandLogoUrl) {
+          brandLogoUrl = attrs.entity_picture as string;
+        }
+      }
+    }
 
-      // Parse station name from attributes
-      if (attrs.station_name) {
-        stationName = String(attrs.station_name);
-      } else {
-        // Strip suffix to get station base name from friendly name
-        const friendlyName = attrs.friendly_name || '';
+    // Fallback: Parse name from friendly_name if no station_name attribute was found
+    if (stationName === 'Gas Station') {
+      const firstActiveEntityId = Object.values(entities).find(
+        (eid) => eid && this.hass!.states[eid],
+      );
+      if (firstActiveEntityId) {
+        const friendlyName = this.hass.states[firstActiveEntityId]?.attributes?.friendly_name || '';
         stationName = friendlyName
           .replace(/\s(Regular|Midgrade|Premium|Diesel|Last Updated|EV Level|EV DC|EV CCS|EV NACS|EV CHAdeMO|EV J1772).*/i, '')
           .trim();
-      }
-
-      // Parse station address from attributes
-      if (attrs.station_address) {
-        stationAddress = String(attrs.station_address);
-      } else if (attrs.street_address) {
-        stationAddress = String(attrs.street_address);
-      }
-
-      if (attrs.distance_miles !== undefined) {
-        distance = formatDistance(attrs.distance_miles);
-      }
-
-      // Check if entity picture is defined for gas station brand logo
-      if (sampleStateObj.attributes.entity_picture) {
-        brandLogoUrl = sampleStateObj.attributes.entity_picture as string;
       }
     }
 
