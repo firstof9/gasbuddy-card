@@ -8,7 +8,7 @@
     "build": "rollup -c",
     "build:watch": "rollup -c -w",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"No tests yet\" && exit 0"
+    "test": "vitest run"
   },
   "author": "firstof9",
   "license": "MIT",
@@ -20,7 +20,8 @@
     "rollup": "^4.60.4",
     "tslib": "^2.6.0",
     "tsx": "^4.22.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^2.1.5"
   },
   "dependencies": {
     "lit": "^3.3.3"
