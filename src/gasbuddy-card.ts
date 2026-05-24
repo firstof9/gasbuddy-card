@@ -353,6 +353,8 @@ export class GasBuddyCard extends LitElement {
     );
 
     const networkName = entities.ev_network ? this.hass!.states[entities.ev_network]?.state : '';
+    const networkStateObj = entities.ev_network ? this.hass!.states[entities.ev_network] : undefined;
+    const website = networkStateObj && networkStateObj.attributes ? networkStateObj.attributes.website as string : undefined;
     const pricing = entities.ev_pricing ? this.hass!.states[entities.ev_pricing]?.state : '';
     const hours = entities.ev_access_hours ? this.hass!.states[entities.ev_access_hours]?.state : '';
     const acceptedCards = entities.ev_cards_accepted ? this.hass!.states[entities.ev_cards_accepted]?.state : '';
@@ -434,7 +436,9 @@ export class GasBuddyCard extends LitElement {
                     class="metadata-val"
                     style="color: ${getNetworkColor(String(networkName))}; font-weight: 600;"
                   >
-                    ${networkName}
+                    ${website
+                      ? html`<a href="${website}" target="_blank" rel="noopener noreferrer">${networkName}</a>`
+                      : networkName}
                   </span>
                 </div>
               `

@@ -267,6 +267,15 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
     word-break: break-word;
   }
 
+  .metadata-val a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .metadata-val a:hover {
+    text-decoration: underline;
+  }
+
   /* Footer Section */
   .footer {
     margin-top: 16px;
@@ -418,7 +427,7 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
             </div>
           `})}
       </div>
-    `}_renderEVContent(e){const t=e.ev_level1,s=e.ev_level2,i=e.ev_dc_fast,a=t&&Number(this.hass.states[t]?.state)||0,r=s&&Number(this.hass.states[s]?.state)||0,n=i&&Number(this.hass.states[i]?.state)||0,o=[{name:"J1772",countId:e.ev_j1772,powerId:e.ev_j1772_power},{name:"CCS",countId:e.ev_ccs,powerId:e.ev_ccs_power},{name:"CHAdeMO",countId:e.ev_chademo,powerId:e.ev_chademo_power},{name:"NACS",countId:e.ev_nacs,powerId:e.ev_nacs_power}].filter(e=>e.countId&&"unavailable"!==this.hass.states[e.countId]?.state&&Number(this.hass.states[e.countId]?.state)>0),c=e.ev_network?this.hass.states[e.ev_network]?.state:"",d=e.ev_pricing?this.hass.states[e.ev_pricing]?.state:"",l=e.ev_access_hours?this.hass.states[e.ev_access_hours]?.state:"",h=e.ev_cards_accepted?this.hass.states[e.ev_cards_accepted]?.state:"",_=e.ev_status?this.hass.states[e.ev_status]?.state:"",p=e.ev_date_last_confirmed?this.hass.states[e.ev_date_last_confirmed]?.state:"";return I`
+    `}_renderEVContent(e){const t=e.ev_level1,s=e.ev_level2,i=e.ev_dc_fast,a=t&&Number(this.hass.states[t]?.state)||0,r=s&&Number(this.hass.states[s]?.state)||0,n=i&&Number(this.hass.states[i]?.state)||0,o=[{name:"J1772",countId:e.ev_j1772,powerId:e.ev_j1772_power},{name:"CCS",countId:e.ev_ccs,powerId:e.ev_ccs_power},{name:"CHAdeMO",countId:e.ev_chademo,powerId:e.ev_chademo_power},{name:"NACS",countId:e.ev_nacs,powerId:e.ev_nacs_power}].filter(e=>e.countId&&"unavailable"!==this.hass.states[e.countId]?.state&&Number(this.hass.states[e.countId]?.state)>0),c=e.ev_network?this.hass.states[e.ev_network]?.state:"",d=e.ev_network?this.hass.states[e.ev_network]:void 0,l=d&&d.attributes?d.attributes.website:void 0,h=e.ev_pricing?this.hass.states[e.ev_pricing]?.state:"",_=e.ev_access_hours?this.hass.states[e.ev_access_hours]?.state:"",p=e.ev_cards_accepted?this.hass.states[e.ev_cards_accepted]?.state:"",u=e.ev_status?this.hass.states[e.ev_status]?.state:"",v=e.ev_date_last_confirmed?this.hass.states[e.ev_date_last_confirmed]?.state:"";return I`
       <div class="ev-section">
         <!-- Charger Badge Summary -->
         <div class="charger-summary">
@@ -478,38 +487,38 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
                     class="metadata-val"
                     style="color: ${function(e){if(!e)return"var(--primary-color)";const t=e.toLowerCase();return t.includes("tesla")?"#cc0000":t.includes("chargepoint")?"#40b83c":t.includes("evgo")?"#0055ff":t.includes("electrify america")?"#00a261":t.includes("blink")?"#0066cc":t.includes("flo")?"#1c85c8":t.includes("shell")?"#fcd116":"var(--primary-color)"}(String(c))}; font-weight: 600;"
                   >
-                    ${c}
+                    ${l?I`<a href="${l}" target="_blank" rel="noopener noreferrer">${c}</a>`:c}
                   </span>
                 </div>
               `:""}
-          ${_&&"unknown"!==_&&"unavailable"!==_?I`
+          ${u&&"unknown"!==u&&"unavailable"!==u?I`
                 <div class="metadata-item">
                   <span class="metadata-key">Status</span>
-                  <span class="metadata-val">${String(_).toUpperCase()}</span>
-                </div>
-              `:""}
-          ${d&&"unknown"!==d&&"unavailable"!==d?I`
-                <div class="metadata-item">
-                  <span class="metadata-key">Pricing</span>
-                  <span class="metadata-val">${d}</span>
-                </div>
-              `:""}
-          ${l&&"unknown"!==l&&"unavailable"!==l?I`
-                <div class="metadata-item">
-                  <span class="metadata-key">Access Hours</span>
-                  <span class="metadata-val">${l}</span>
+                  <span class="metadata-val">${String(u).toUpperCase()}</span>
                 </div>
               `:""}
           ${h&&"unknown"!==h&&"unavailable"!==h?I`
                 <div class="metadata-item">
-                  <span class="metadata-key">Payments</span>
+                  <span class="metadata-key">Pricing</span>
                   <span class="metadata-val">${h}</span>
+                </div>
+              `:""}
+          ${_&&"unknown"!==_&&"unavailable"!==_?I`
+                <div class="metadata-item">
+                  <span class="metadata-key">Access Hours</span>
+                  <span class="metadata-val">${_}</span>
                 </div>
               `:""}
           ${p&&"unknown"!==p&&"unavailable"!==p?I`
                 <div class="metadata-item">
+                  <span class="metadata-key">Payments</span>
+                  <span class="metadata-val">${p}</span>
+                </div>
+              `:""}
+          ${v&&"unknown"!==v&&"unavailable"!==v?I`
+                <div class="metadata-item">
                   <span class="metadata-key">Last Confirmed</span>
-                  <span class="metadata-val">${ve(p)}</span>
+                  <span class="metadata-val">${ve(v)}</span>
                 </div>
               `:""}
         </div>

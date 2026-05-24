@@ -269,6 +269,15 @@ export const cardStyles = css`
     word-break: break-word;
   }
 
+  .metadata-val a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .metadata-val a:hover {
+    text-decoration: underline;
+  }
+
   /* Footer Section */
   .footer {
     margin-top: 16px;
