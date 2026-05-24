@@ -283,7 +283,7 @@ export class GasBuddyCard extends LitElement {
     if (!deviceId) {
       return html`
         <ha-card>
-          <div style="padding: 16px; color: red;">
+          <div class="card-message card-message--error">
             Please select a GasBuddy Device in the card configuration editor.
           </div>
         </ha-card>
@@ -366,7 +366,7 @@ export class GasBuddyCard extends LitElement {
     if (!hasGas && !hasEV) {
       return html`
         <ha-card>
-          <div style="padding: 16px; color: var(--secondary-text-color);">
+          <div class="card-message card-message--info">
             No active sensors found for this GasBuddy device. Verify that the integration has loaded data successfully.
           </div>
         </ha-card>
@@ -751,7 +751,7 @@ export class GasBuddyCard extends LitElement {
                     const power = c.powerId ? this.hass!.states[c.powerId]?.state : undefined;
                     const hasPower = power && power !== 'unknown' && power !== 'unavailable';
                     return html`
-                      <div class="connector-card" style="border-color: rgba(var(--rgb-primary-color, 33, 150, 243), 0.2);" role="group" aria-label="${count} ${c.name} connectors${hasPower ? `, power capacity ${power} kilowatts` : ''}">
+                      <div class="connector-card" role="group" aria-label="${count} ${c.name} connectors${hasPower ? `, power capacity ${power} kilowatts` : ''}">
                         <div class="connector-name" aria-hidden="true">${c.name}</div>
                         <div class="connector-details" aria-hidden="true">
                           <span class="connector-count">${count}x</span>
@@ -774,8 +774,8 @@ export class GasBuddyCard extends LitElement {
                 <div class="metadata-item">
                   <span class="metadata-key">Network</span>
                   <span
-                    class="metadata-val"
-                    style="color: ${getNetworkColor(String(networkName))}; font-weight: 600;"
+                    class="metadata-val network-name"
+                    style="--gasbuddy-network-color: ${getNetworkColor(String(networkName))}"
                   >
                     ${website
                       ? html`<a href="${website}" target="_blank" rel="noopener noreferrer">${networkName}</a>`

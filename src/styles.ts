@@ -12,6 +12,23 @@ export const cardStyles = css`
     transition: all 0.3s ease;
   }
 
+  .card-message {
+    padding: 16px;
+  }
+
+  .card-message--error {
+    color: var(--error-color, red);
+  }
+
+  .card-message--info {
+    color: var(--secondary-text-color);
+  }
+
+  .network-name {
+    color: var(--gasbuddy-network-color, var(--primary-color));
+    font-weight: 600;
+  }
+
   .header {
     display: flex;
     justify-content: space-between;
