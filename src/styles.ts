@@ -337,6 +337,8 @@ export const cardStyles = css`
   }
 
   .payment-card-icon {
+    width: 45px;
+    height: 30px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
     border-radius: 3px;
     display: inline-block;
