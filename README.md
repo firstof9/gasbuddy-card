@@ -8,6 +8,15 @@
 
 A modern, premium Home Assistant custom Lovelace card for displaying gas prices and EV charging station data fetched from the [GasBuddy custom integration](https://github.com/firstof9/ha-gasbuddy).
 
+## Features
+
+- **Fuel Prices & EV Chargers:** Displays comprehensive gas station fuel prices and a dedicated EV view showing available chargers and connector types.
+- **Station Address:** Automatically discovers and displays the station address and coordinates.
+- **EV Payment Options:** Shows accepted payment methods for EV charging using recognizable credit and debit card logos.
+- **Last Confirmed Status:** Clearly shows the time elapsed since the last price or charger status confirmation.
+- **Version Tracking:** Outputs the active card version into your browser's console for easy debugging.
+- **Visual Editor:** Full UI configuration through the Lovelace card editor.
+
 ## Screenshots
 
 ### Gas Prices View
