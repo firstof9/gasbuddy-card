@@ -414,14 +414,22 @@ export function generateSparklinePaths(
     };
   }
 
-  // Find min and max time & val
-  const times = points.map((p) => p.time);
-  const minTime = Math.min(...times);
-  const maxTime = Math.max(...times);
-
-  const vals = points.map((p) => p.val);
-  const minVal = Math.min(...vals);
-  const maxVal = Math.max(...vals);
+  // Find min/max time & val in a single pass per axis. `Math.min(...arr)` /
+  // `Math.max(...arr)` would stack-overflow in some browsers when the spread
+  // exceeds the engine's argument limit (~125k on V8). Price history won't
+  // realistically hit that, but the reduction version is cheap, allocation-
+  // free, and removes the only spread-on-array call in the codebase.
+  let minTime = points[0].time;
+  let maxTime = points[0].time;
+  let minVal = points[0].val;
+  let maxVal = points[0].val;
+  for (let i = 1; i < points.length; i++) {
+    const { time, val } = points[i];
+    if (time < minTime) minTime = time;
+    else if (time > maxTime) maxTime = time;
+    if (val < minVal) minVal = val;
+    else if (val > maxVal) maxVal = val;
+  }
 
   const timeDiff = maxTime - minTime || 1;
   const valDiff = maxVal - minVal || 1;
