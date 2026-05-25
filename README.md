@@ -126,8 +126,40 @@ ev_cards_accepted_entity: sensor.other_ev_payment_methods
 | `trend_hours` | number | `168` | Hours of history to plot when `show_trend` is on. Range 1–720. |
 | `show_trend_indicator` | boolean | `false` | Show an inline ▲ / ▼ / ≈ + percent change beside each price. |
 | `trend_indicator_baseline_hours` | number | `24` | Hours back to compare the current price against. Range 1–720. |
+| `tap_action` | [Action](#price-tile-actions) | `{ action: 'more-info' }` | What happens when a price tile is tapped or activated via keyboard. |
+| `hold_action` | [Action](#price-tile-actions) | `{ action: 'none' }` | What happens when a price tile is held for ~½ second. |
 | `<fuel_type>_entity` | string | Auto-discovered | Manual override for specific fuel price sensors. |
 | `<ev_sensor>_entity` | string | Auto-discovered | Manual override for specific EV charger status/connector sensors. |
+
+### Price tile actions
+
+Each fuel price tile is interactive. By default, tapping a tile opens
+Home Assistant's standard more-info dialog for that grade's sensor —
+the same dialog you get clicking the entity anywhere else in Lovelace.
+
+You can override the tap / hold behavior using HA's standard action
+config schema (the same one used by entity cards, button cards, etc.):
+
+```yaml
+type: custom:gasbuddy-card
+device_id: 32_character_device_registry_id
+
+# Open a navigation path instead of more-info on tap
+tap_action:
+  action: navigate
+  navigation_path: /lovelace/fuel-stations
+
+# Long-press to call a service (e.g. send the price to a notify target)
+hold_action:
+  action: call-service
+  service: notify.mobile_app_my_phone
+  service_data:
+    message: "Check the price card!"
+```
+
+Supported actions: `more-info`, `navigate`, `url`, `call-service`,
+`none`. Setting both to `none` removes the focus outline and keyboard
+handling — the tile becomes purely informational.
 
 ## Development
 

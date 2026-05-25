@@ -36,7 +36,27 @@ export interface HomeAssistant {
   connection?: {
     sendMessagePromise: (msg: Record<string, unknown>) => Promise<unknown>;
   };
+  callService?: (
+    domain: string,
+    service: string,
+    serviceData?: Record<string, unknown>,
+    target?: Record<string, unknown>,
+  ) => void;
 }
+
+// HA-standard ActionConfig — what the lovelace action picker emits and
+// what most built-in cards consume for tap_action / hold_action.
+export type ActionConfig =
+  | { action: 'none' }
+  | { action: 'more-info'; entity?: string }
+  | { action: 'navigate'; navigation_path: string }
+  | { action: 'url'; url_path: string }
+  | {
+      action: 'call-service';
+      service: string;
+      service_data?: Record<string, unknown>;
+      target?: Record<string, unknown>;
+    };
 
 export interface GasBuddyCardConfig {
   type: string;
@@ -48,6 +68,11 @@ export interface GasBuddyCardConfig {
   show_trend_indicator?: boolean;
   trend_indicator_baseline_hours?: number;
 
+  // Configurable tap / hold actions on each price tile. Default tap_action
+  // is `{ action: 'more-info' }` for the tile's primary sensor; default
+  // hold_action is `{ action: 'none' }`.
+  tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
 
   // Overrides for specific sensors
   regular_gas_entity?: string;
