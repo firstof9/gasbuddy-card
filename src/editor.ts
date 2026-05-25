@@ -11,7 +11,13 @@ interface HaFormFieldEntry {
 
 interface HaFormExpandableEntry {
   type: 'expandable';
-  name: string;
+  // NB: do not set `name` on expandable sections. ha-form's expandable
+  // selector wraps the inner schema's values under the `name` key when
+  // it's present (effectively making the section a sub-object), which
+  // breaks any toggle/field inside the section because the parent form
+  // then sees the inner state as `{ section_name: { field: value } }`
+  // instead of merging fields at the top level. Leaving `name` off
+  // gives us the merged behavior we want.
   title: string;
   icon?: string;
   expanded?: boolean;
@@ -77,7 +83,6 @@ const SCHEMA: HaFormSchemaEntry[] = [
   // ── Price trend graph ────────────────────────────────────
   {
     type: 'expandable',
-    name: '_trend_section',
     title: 'Price Trend Graph',
     icon: 'mdi:chart-line',
     schema: [
@@ -99,7 +104,6 @@ const SCHEMA: HaFormSchemaEntry[] = [
   // ── Fuel sensor overrides ────────────────────────────────
   {
     type: 'expandable',
-    name: '_fuel_overrides_section',
     title: 'Fuel Sensor Overrides',
     icon: 'mdi:fuel',
     schema: [
@@ -122,7 +126,6 @@ const SCHEMA: HaFormSchemaEntry[] = [
   // ── EV charger overrides ─────────────────────────────────
   {
     type: 'expandable',
-    name: '_ev_chargers_section',
     title: 'EV Charger Overrides',
     icon: 'mdi:ev-station',
     schema: [
@@ -135,7 +138,6 @@ const SCHEMA: HaFormSchemaEntry[] = [
   // ── EV connector overrides ───────────────────────────────
   {
     type: 'expandable',
-    name: '_ev_connectors_section',
     title: 'EV Connector Overrides',
     icon: 'mdi:power-plug',
     schema: [
@@ -153,7 +155,6 @@ const SCHEMA: HaFormSchemaEntry[] = [
   // ── EV metadata overrides ────────────────────────────────
   {
     type: 'expandable',
-    name: '_ev_metadata_section',
     title: 'EV Metadata Overrides',
     icon: 'mdi:information-outline',
     schema: [
@@ -166,19 +167,6 @@ const SCHEMA: HaFormSchemaEntry[] = [
     ],
   },
 ];
-
-// Form fields whose names start with `_` are pure presentation markers
-// for ha-form's expandable sections. Strip them out of the value before
-// emitting config-changed so they never end up persisted in the YAML.
-const PRESENTATION_KEY = /^_/;
-
-function stripPresentationKeys(value: GasBuddyCardConfig): GasBuddyCardConfig {
-  const cleaned: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(value)) {
-    if (!PRESENTATION_KEY.test(k)) cleaned[k] = v;
-  }
-  return cleaned as unknown as GasBuddyCardConfig;
-}
 
 @customElement('gasbuddy-card-editor')
 export class GasBuddyCardEditor extends LitElement {
@@ -210,7 +198,7 @@ export class GasBuddyCardEditor extends LitElement {
   private _valueChanged(ev: CustomEvent<{ value: GasBuddyCardConfig }>): void {
     this.dispatchEvent(
       new CustomEvent('config-changed', {
-        detail: { config: stripPresentationKeys(ev.detail.value) },
+        detail: { config: ev.detail.value },
         bubbles: true,
         composed: true,
       }),
