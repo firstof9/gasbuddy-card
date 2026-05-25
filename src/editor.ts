@@ -67,20 +67,10 @@ const SCHEMA: HaFormSchemaEntry[] = [
       },
     },
   },
-  {
-    name: 'show_trend_indicator',
-    label: 'Show Trend Indicator',
-    helper: 'Display an arrow + percent change next to each price.',
-    selector: { boolean: {} },
-  },
-  {
-    name: 'trend_indicator_baseline_hours',
-    label: 'Trend Indicator Baseline (hours)',
-    helper: 'Compare current price to N hours ago. Default 24.',
-    selector: { number: { min: 1, max: 720, mode: 'box' } },
-  },
-
   // ── Price trend graph ────────────────────────────────────
+  // All four trend toggles live together: the background sparkline
+  // (show_trend / trend_hours) and the inline arrow chip
+  // (show_trend_indicator / trend_indicator_baseline_hours).
   {
     type: 'expandable',
     title: 'Price Trend Graph',
@@ -96,6 +86,18 @@ const SCHEMA: HaFormSchemaEntry[] = [
         name: 'trend_hours',
         label: 'Trend Hours',
         helper: 'Hours of price history to display. Default 168 (7 days). Range 1–720.',
+        selector: { number: { min: 1, max: 720, mode: 'box' } },
+      },
+      {
+        name: 'show_trend_indicator',
+        label: 'Show Trend Indicator',
+        helper: 'Display an arrow + percent change next to each price.',
+        selector: { boolean: {} },
+      },
+      {
+        name: 'trend_indicator_baseline_hours',
+        label: 'Trend Indicator Baseline (hours)',
+        helper: 'Compare current price to N hours ago. Default 24.',
         selector: { number: { min: 1, max: 720, mode: 'box' } },
       },
     ],
