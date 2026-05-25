@@ -372,7 +372,10 @@ export class GasBuddyCard extends LitElement {
               ${stationAddress}${stationAddress && distance ? ` • ${distance}` : distance}
             </div>
           </div>
-          <div class="brand-logo" aria-hidden="true">
+          <div
+            class="brand-logo ${currentTab === 'ev' && entities.ev_network ? 'brand-network' : ''}"
+            aria-hidden="true"
+          >
             ${currentTab === 'ev' && entities.ev_network
               ? getNetworkLogo(this.hass.states[entities.ev_network]?.state || '')
               : brandLogoUrl
