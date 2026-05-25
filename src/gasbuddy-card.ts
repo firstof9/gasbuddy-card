@@ -1,6 +1,6 @@
 import { LitElement, html, type TemplateResult, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import type { GasBuddyCardConfig, HomeAssistant } from './types.js';
+import type { ActionConfig, GasBuddyCardConfig, HomeAssistant } from './types.js';
 import { cardStyles } from './styles.js';
 import {
   findDeviceEntities,
@@ -272,6 +272,128 @@ export class GasBuddyCard extends LitElement {
   private _onPriceCardPointerLeave = (): void => {
     if (this._hoverState) this._hoverState = null;
   };
+
+  // ── Action dispatch (tap_action / hold_action) ─────────────────────
+  //
+  // Dispatches a Home Assistant ActionConfig against the standard
+  // lovelace events / window APIs that HA's built-in cards use, so the
+  // host shell handles routing, navigation, and dialogs uniformly.
+
+  private static readonly HOLD_DURATION_MS = 500;
+  private static readonly HOLD_MOVE_TOLERANCE_PX = 6;
+
+  private _holdTimer?: number;
+  private _holdFired = false;
+  private _holdStart?: { x: number; y: number };
+
+  private _showMoreInfo(entityId: string): void {
+    this.dispatchEvent(
+      new CustomEvent('hass-more-info', {
+        detail: { entityId },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private _runAction(config: ActionConfig | undefined, defaultEntityId?: string): void {
+    if (!config) return;
+    switch (config.action) {
+      case 'none':
+        return;
+      case 'more-info': {
+        const entityId = config.entity || defaultEntityId;
+        if (entityId) this._showMoreInfo(entityId);
+        return;
+      }
+      case 'navigate':
+        if (!config.navigation_path) return;
+        window.history.pushState(null, '', config.navigation_path);
+        // HA's lovelace router listens for `location-changed` to react
+        // without a full page reload.
+        this.dispatchEvent(new CustomEvent('location-changed', { bubbles: true, composed: true }));
+        return;
+      case 'url':
+        if (config.url_path) {
+          window.open(config.url_path, '_blank', 'noopener,noreferrer');
+        }
+        return;
+      case 'call-service': {
+        if (!config.service || !config.service.includes('.')) return;
+        const [domain, service] = config.service.split('.', 2);
+        this.hass?.callService?.(domain, service, config.service_data, config.target);
+        return;
+      }
+    }
+  }
+
+  private _resolvedTapAction(): ActionConfig {
+    return this._config?.tap_action ?? { action: 'more-info' };
+  }
+
+  private _resolvedHoldAction(): ActionConfig {
+    return this._config?.hold_action ?? { action: 'none' };
+  }
+
+  private _onPriceCardPointerDown = (entityId: string | undefined, ev: PointerEvent): void => {
+    this._holdFired = false;
+    this._holdStart = { x: ev.clientX, y: ev.clientY };
+    const hold = this._resolvedHoldAction();
+    if (hold.action === 'none') return;
+    if (this._holdTimer) clearTimeout(this._holdTimer);
+    this._holdTimer = window.setTimeout(() => {
+      this._holdFired = true;
+      this._holdTimer = undefined;
+      this._runAction(hold, entityId);
+    }, GasBuddyCard.HOLD_DURATION_MS);
+  };
+
+  private _onPriceCardPointerMoveCancelHold = (ev: PointerEvent): void => {
+    if (!this._holdTimer || !this._holdStart) return;
+    const dx = ev.clientX - this._holdStart.x;
+    const dy = ev.clientY - this._holdStart.y;
+    if (dx * dx + dy * dy > GasBuddyCard.HOLD_MOVE_TOLERANCE_PX ** 2) {
+      clearTimeout(this._holdTimer);
+      this._holdTimer = undefined;
+    }
+  };
+
+  private _onPriceCardPointerUp = (entityId: string | undefined, ev: PointerEvent): void => {
+    if (this._holdTimer) {
+      clearTimeout(this._holdTimer);
+      this._holdTimer = undefined;
+    }
+    if (this._holdFired) {
+      this._holdFired = false;
+      ev.preventDefault();
+      return;
+    }
+    // Ignore the bubbled pointerup from an inner anchor (none today but
+    // future-proof for child links).
+    if ((ev.target as HTMLElement | null)?.closest('a')) return;
+    this._runAction(this._resolvedTapAction(), entityId);
+  };
+
+  private _onPriceCardPointerCancel = (): void => {
+    if (this._holdTimer) {
+      clearTimeout(this._holdTimer);
+      this._holdTimer = undefined;
+    }
+    this._holdFired = false;
+  };
+
+  private _onPriceCardKeydown(entityId: string | undefined, ev: KeyboardEvent): void {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    ev.preventDefault();
+    this._runAction(this._resolvedTapAction(), entityId);
+  }
+
+  private _isPriceCardInteractive(entityId: string | undefined): boolean {
+    if (!entityId) return false;
+    const tap = this._resolvedTapAction();
+    const hold = this._resolvedHoldAction();
+    return tap.action !== 'none' || hold.action !== 'none';
+  }
 
   private _onTabKeydown = (ev: KeyboardEvent): void => {
     // Implements the WAI-ARIA Authoring Practices "Tabs with Manual Activation"
@@ -751,22 +873,38 @@ export class GasBuddyCard extends LitElement {
           const hasBoth = creditPriceStr && cashPriceStr && creditPriceStr !== cashPriceStr;
 
           const unit =
-            creditState?.attributes?.unit_of_measurement ??
+          creditState?.attributes?.unit_of_measurement ??
             cashState?.attributes?.unit_of_measurement ??
             '';
 
-          const trendEntityId = creditEntityId || cashEntityId;
+          const actionEntityId = creditEntityId || cashEntityId;
+          const interactive = this._isPriceCardInteractive(actionEntityId);
+
           return html`
             <div
-              class="price-card"
-              role="group"
+              class="price-card ${interactive ? 'price-card--interactive' : ''}"
+              role="${interactive ? 'button' : 'group'}"
+              tabindex="${interactive ? '0' : '-1'}"
               aria-label="${grade.name} price: ${creditPriceStr && cashPriceStr
                 ? `${creditPriceStr} ${t(this.hass, 'price_credit')}, ${cashPriceStr} ${t(this.hass, 'price_cash')}`
                 : `${displayPrice} ${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')}`}"
-              @pointermove=${(ev: PointerEvent) => this._onPriceCardPointerMove(trendEntityId, ev)}
-              @pointerleave=${this._onPriceCardPointerLeave}
+              @pointerdown=${(ev: PointerEvent) => this._onPriceCardPointerDown(actionEntityId, ev)}
+              @pointermove=${(ev: PointerEvent) => {
+                this._onPriceCardPointerMove(actionEntityId, ev);
+                this._onPriceCardPointerMoveCancelHold(ev);
+              }}
+              @pointerup=${(ev: PointerEvent) => this._onPriceCardPointerUp(actionEntityId, ev)}
+              @pointercancel=${() => {
+                this._onPriceCardPointerLeave();
+                this._onPriceCardPointerCancel();
+              }}
+              @pointerleave=${() => {
+                this._onPriceCardPointerLeave();
+                this._onPriceCardPointerCancel();
+              }}
+              @keydown=${(ev: KeyboardEvent) => this._onPriceCardKeydown(actionEntityId, ev)}
             >
-              ${this._renderTrendGraph(trendEntityId)}
+              ${this._renderTrendGraph(actionEntityId)}
               <div class="price-card-content" aria-hidden="true">
                 <div class="fuel-type">${grade.name}</div>
                 ${hasBoth
@@ -791,7 +929,7 @@ export class GasBuddyCard extends LitElement {
                   <span>${unit || 'USD'}</span>
                 </div>
               </div>
-              ${this._renderTrendTooltip(trendEntityId, creditUnit, cashUnit)}
+              ${this._renderTrendTooltip(actionEntityId, creditUnit, cashUnit)}
             </div>
           `;
         })}
