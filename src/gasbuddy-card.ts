@@ -1,6 +1,7 @@
 import { LitElement, html, type TemplateResult, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { ActionConfig, GasBuddyCardConfig, HomeAssistant } from './types.js';
+import { runAction, type ActionContext } from './actions.js';
 import { cardStyles } from './styles.js';
 import {
   findDeviceEntities,
@@ -296,35 +297,24 @@ export class GasBuddyCard extends LitElement {
     );
   }
 
-  private _runAction(config: ActionConfig | undefined, defaultEntityId?: string): void {
-    if (!config) return;
-    switch (config.action) {
-      case 'none':
-        return;
-      case 'more-info': {
-        const entityId = config.entity || defaultEntityId;
-        if (entityId) this._showMoreInfo(entityId);
-        return;
-      }
-      case 'navigate':
-        if (!config.navigation_path) return;
-        window.history.pushState(null, '', config.navigation_path);
+  private _actionContext(): ActionContext {
+    return {
+      hass: this.hass,
+      moreInfo: (entityId) => this._showMoreInfo(entityId),
+      navigate: (path) => {
+        window.history.pushState(null, '', path);
         // HA's lovelace router listens for `location-changed` to react
         // without a full page reload.
         this.dispatchEvent(new CustomEvent('location-changed', { bubbles: true, composed: true }));
-        return;
-      case 'url':
-        if (config.url_path) {
-          window.open(config.url_path, '_blank', 'noopener,noreferrer');
-        }
-        return;
-      case 'call-service': {
-        if (!config.service || !config.service.includes('.')) return;
-        const [domain, service] = config.service.split('.', 2);
-        this.hass?.callService?.(domain, service, config.service_data, config.target);
-        return;
-      }
-    }
+      },
+      openUrl: (url) => {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      },
+    };
+  }
+
+  private _runAction(config: ActionConfig | undefined, defaultEntityId?: string): void {
+    runAction(config, this._actionContext(), defaultEntityId);
   }
 
   private _resolvedTapAction(): ActionConfig {
