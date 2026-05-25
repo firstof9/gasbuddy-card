@@ -593,7 +593,13 @@ function e(e,t,s,a){var i,r=arguments.length,n=r<3?t:null===a?a=Object.getOwnPro
             `:""}
       </div>
     `}_renderTrendGraph(e){if(!this._config?.show_trend||!e)return B``;const t=this._historyData[e];if(!t||0===t.length)return B``;const{stroke:s,fill:a}=function(e,t=40,s=10){if(!e||0===e.length)return{stroke:"",fill:""};const a=e.map(e=>{const t=void 0!==e.s?e.s:e.state,s=void 0!==e.t?e.t:void 0!==e.lu?e.lu:void 0!==e.lc?e.lc:void 0!==e.last_updated?e.last_updated:e.last_changed,a=Number(t);let i=NaN;if("number"==typeof s)i=s;else if("string"==typeof s){const e=Number(s);i=isNaN(e)?Date.parse(s)/1e3:e}return{val:a,time:i}}).filter(e=>!isNaN(e.val)&&!isNaN(e.time));if(0===a.length)return{stroke:"",fill:""};if(1===a.length){const e=(t+s)/2;return{stroke:`M 0,${e} L 100,${e}`,fill:`M 0,${e} L 100,${e} L 100,50 L 0,50 Z`}}const i=a.map(e=>e.time),r=Math.min(...i),n=Math.max(...i),o=a.map(e=>e.val),c=Math.min(...o),l=Math.max(...o),d=n-r||1,h=l-c||1,p=a.map(e=>({x:(e.time-r)/d*100,y:c===l?(t+s)/2:t-(e.val-c)/h*(t-s)})),_=p.map((e,t)=>`${0===t?"M":"L"} ${e.x.toFixed(1)},${e.y.toFixed(1)}`),u=_.join(" "),g=p[0].x.toFixed(1);return{stroke:u,fill:`${u} L ${p[p.length-1].x.toFixed(1)},50 L ${g},50 Z`}}(t);if(!s)return B``;const i=`grad-${e.replace(/\./g,"-")}`;return B`
-      <svg class="trend-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
+      <svg
+        class="trend-svg"
+        viewBox="0 0 100 50"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        focusable="false"
+      >
         <defs>
           <linearGradient id="${i}" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stop-color="var(--accent-color)" stop-opacity="0.2" />
