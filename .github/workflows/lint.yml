@@ -30,15 +30,17 @@ jobs:
           node-version: '22'
       - run: npm ci
       - run: npm run build
-      - name: Verify committed bundle matches build output
-        run: |
-          # The committed gasbuddy-card.js must match what `npm run build`
-          # produces from src/. Fails CI if a PR forgot to rebuild.
-          if [ -n "$(git status --porcelain gasbuddy-card.js)" ]; then
-            echo "::error::gasbuddy-card.js is out of sync with src/. Run 'npm run build' and commit."
-            git diff gasbuddy-card.js
-            exit 1
-          fi
+      # gasbuddy-card.js is not committed (see .gitignore). Upload the
+      # freshly-built bundle as a workflow artifact so reviewers can grab
+      # a PR's compiled output for manual testing without having to
+      # clone + npm install + build locally.
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: gasbuddy-card-bundle
+          path: gasbuddy-card.js
+          if-no-files-found: error
+          retention-days: 14
 
   unit-tests:
     name: Unit tests

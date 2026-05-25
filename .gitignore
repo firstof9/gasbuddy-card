@@ -1,5 +1,8 @@
 node_modules/
 dist/
+# Build output — rebuilt on every release via .github/workflows/release.yml.
+# Not committed so PRs don't all fight over the same generated file.
+gasbuddy-card.js
 gasbuddy-card.js.map
 .storage/
 .DS_Store
