@@ -129,14 +129,14 @@ ev_cards_accepted_entity: sensor.other_ev_payment_methods
 
 ## Development
 
-The card is written in TypeScript with [Lit](https://lit.dev) and bundled with [Rollup](https://rollupjs.org). Source lives in `src/`; the committed `gasbuddy-card.js` at the repo root is the bundled output.
+The card is written in TypeScript with [Lit](https://lit.dev) and bundled with [Rollup](https://rollupjs.org). Source lives in `src/`; running `npm run build` produces `gasbuddy-card.js` at the repo root (gitignored).
 
 ```bash
 npm install        # install dev deps + lit
 npm run typecheck  # tsc --noEmit (no JS emit, just type checking)
-npm test           # run placeholder test script
+npm test           # run vitest unit tests
 npm run build      # produce gasbuddy-card.js from src/
 npm run build:watch  # rebuild on every save while iterating
 ```
 
-CI runs `typecheck`, `build`, and `test` on every PR. The `build` job also fails CI if the committed bundle is out of sync with source.
+CI runs `typecheck`, `build`, and `test` on every PR. The built bundle is uploaded as a workflow artifact (`gasbuddy-card-bundle`) on every successful build so reviewers can download a PR's compiled output without having to build locally. End users get the bundle from [GitHub Releases](https://github.com/firstof9/gasbuddy-card/releases), which the `release.yml` workflow builds and attaches automatically when a release is published.
