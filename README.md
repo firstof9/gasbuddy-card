@@ -124,6 +124,8 @@ ev_cards_accepted_entity: sensor.other_ev_payment_methods
 | `default_mode` | `"gas"` \| `"ev"` | `"gas"` | Which tab the card opens on when both gas and EV data are present. |
 | `show_trend` | boolean | `false` | Render a background price-history sparkline behind each fuel grade. |
 | `trend_hours` | number | `168` | Hours of history to plot when `show_trend` is on. Range 1–720. |
+| `show_trend_indicator` | boolean | `false` | Show an inline ▲ / ▼ / ≈ + percent change beside each price. |
+| `trend_indicator_baseline_hours` | number | `24` | Hours back to compare the current price against. Range 1–720. |
 | `<fuel_type>_entity` | string | Auto-discovered | Manual override for specific fuel price sensors. |
 | `<ev_sensor>_entity` | string | Auto-discovered | Manual override for specific EV charger status/connector sensors. |
 

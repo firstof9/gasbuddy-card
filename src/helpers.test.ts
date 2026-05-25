@@ -7,6 +7,7 @@ import {
   getNetworkColor,
   getPaymentIcons,
   generateSparklinePaths,
+  computePriceTrend,
 } from './helpers.js';
 import type { HomeAssistant } from './types.js';
 
@@ -378,6 +379,136 @@ describe('generateSparklinePaths', () => {
     // first point: t=2000 → max time → x=100, val=4 → y=10
     // second point: t=1000 → min time → x=0, val=3 → y=40
     expect(stroke).toBe('M 100.0,10.0 L 0.0,40.0');
+  });
+});
+
+describe('computePriceTrend', () => {
+  // 1h = 3600s in the synthetic timestamps below.
+  const HOUR = 3600;
+
+  it('returns null for missing or too-sparse history', () => {
+    expect(computePriceTrend(undefined, 24)).toBeNull();
+    expect(computePriceTrend([], 24)).toBeNull();
+    expect(computePriceTrend([{ s: '3.00', t: 1000 }], 24)).toBeNull();
+  });
+
+  it('returns null when only one valid numeric point survives parsing', () => {
+    expect(
+      computePriceTrend(
+        [
+          { s: '3.00', t: 1000 },
+          { s: 'unavailable', t: 2000 },
+          { s: 'unknown', t: 3000 },
+        ],
+        24,
+      ),
+    ).toBeNull();
+  });
+
+  it('returns null when the baseline value is zero', () => {
+    expect(
+      computePriceTrend(
+        [
+          { s: '0', t: 1000 },
+          { s: '3.00', t: 1000 + 24 * HOUR },
+        ],
+        24,
+      ),
+    ).toBeNull();
+  });
+
+  it('reports a downward trend when latest < baseline (good for the driver)', () => {
+    const result = computePriceTrend(
+      [
+        { s: '4.00', t: 0 },
+        { s: '3.00', t: 24 * HOUR },
+      ],
+      24,
+    )!;
+    expect(result.direction).toBe('down');
+    expect(result.percent).toBeCloseTo(25, 5);
+    expect(result.baseline).toBe(4.0);
+    expect(result.latest).toBe(3.0);
+    expect(result.hoursCompared).toBe(24);
+  });
+
+  it('reports an upward trend when latest > baseline', () => {
+    const result = computePriceTrend(
+      [
+        { s: '3.00', t: 0 },
+        { s: '3.60', t: 24 * HOUR },
+      ],
+      24,
+    )!;
+    expect(result.direction).toBe('up');
+    expect(result.percent).toBeCloseTo(20, 5);
+  });
+
+  it('reports flat when change is below the threshold (~0.5%)', () => {
+    const result = computePriceTrend(
+      [
+        { s: '3.00', t: 0 },
+        { s: '3.005', t: 24 * HOUR },
+      ],
+      24,
+    )!;
+    expect(result.direction).toBe('flat');
+    expect(result.percent).toBeLessThan(0.5);
+  });
+
+  it('picks the closest available baseline when no point sits at exactly N hours ago', () => {
+    // History at t=0, 12h, 24h, 36h. Asking for 24h baseline should
+    // pick the 24h point (delta 0), not the 12h or 36h points.
+    const history = [
+      { s: '3.00', t: 0 },
+      { s: '3.20', t: 12 * HOUR },
+      { s: '3.50', t: 24 * HOUR },
+      { s: '4.00', t: 48 * HOUR },
+    ];
+    const result = computePriceTrend(history, 24)!;
+    expect(result.baseline).toBe(3.5);
+    expect(result.latest).toBe(4.0);
+    expect(result.hoursCompared).toBe(24);
+  });
+
+  it('reports the actual hoursCompared when data is sparser than requested', () => {
+    // History at t=0 and t=36h. Asking for 24h finds only 36h-old point
+    // as the closest non-latest entry.
+    const result = computePriceTrend(
+      [
+        { s: '3.00', t: 0 },
+        { s: '4.00', t: 36 * HOUR },
+      ],
+      24,
+    )!;
+    expect(result.hoursCompared).toBe(36);
+  });
+
+  it('uses the most-recently-timestamped point as "latest" regardless of array order', () => {
+    const result = computePriceTrend(
+      [
+        { s: '3.00', t: 24 * HOUR }, // latest in time, listed first
+        { s: '4.00', t: 0 },
+      ],
+      24,
+    )!;
+    expect(result.latest).toBe(3.0);
+    expect(result.baseline).toBe(4.0);
+    expect(result.direction).toBe('down');
+  });
+
+  it('supports the standard state/last_updated fields', () => {
+    const baselineIso = new Date('2026-05-24T20:00:00.000Z').toISOString();
+    const latestIso = new Date('2026-05-25T20:00:00.000Z').toISOString();
+    const result = computePriceTrend(
+      [
+        { state: '4.00', last_updated: baselineIso },
+        { state: '3.00', last_updated: latestIso },
+      ],
+      24,
+    )!;
+    expect(result.direction).toBe('down');
+    expect(result.percent).toBeCloseTo(25, 5);
   });
 });
 

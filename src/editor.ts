@@ -37,6 +37,18 @@ const SCHEMA: HaFormSchemaEntry[] = [
     helper: 'Hours of price history to display. Default is 168 (7 days).',
     selector: { number: { min: 1, max: 720, mode: 'box' } },
   },
+  {
+    name: 'show_trend_indicator',
+    label: 'Show Trend Indicator',
+    helper: 'Display an arrow + percent change next to each price.',
+    selector: { boolean: {} },
+  },
+  {
+    name: 'trend_indicator_baseline_hours',
+    label: 'Trend Indicator Baseline (hours)',
+    helper: 'Compare current price to N hours ago. Default 24.',
+    selector: { number: { min: 1, max: 720, mode: 'box' } },
+  },
 
   // Overrides section
   {

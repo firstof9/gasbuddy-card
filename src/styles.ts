@@ -280,6 +280,33 @@ export const cardStyles = css`
     gap: 4px;
   }
 
+  .trend-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    margin: 2px 0;
+    color: var(--secondary-text-color);
+  }
+
+  .trend-indicator-icon {
+    --mdc-icon-size: 14px;
+  }
+
+  /* Falling prices are good for the driver — use the theme's success hue.
+     Rising prices use the error hue. Flat uses the neutral secondary text
+     color set on .trend-indicator above. */
+  .trend-indicator--down {
+    color: var(--success-color, #43a047);
+  }
+
+  .trend-indicator--up {
+    color: var(--error-color, #db4437);
+  }
+
   /* EV Section Layout */
   .ev-section {
     display: flex;
