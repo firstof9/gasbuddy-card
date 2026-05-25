@@ -32,6 +32,7 @@ export interface HomeAssistant {
     };
     [key: string]: unknown;
   };
+  localize?: (key: string, ...args: unknown[]) => string;
   connection?: {
     sendMessagePromise: (msg: Record<string, unknown>) => Promise<unknown>;
   };

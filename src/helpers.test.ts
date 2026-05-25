@@ -57,26 +57,29 @@ describe('formatDistance', () => {
 });
 
 describe('formatTimestamp', () => {
-  const now = Date.now();
-
   it('returns "Just now" for very recent timestamps', () => {
+    const now = Date.now();
     expect(formatTimestamp(new Date(now - 5_000).toISOString())).toBe('Just now');
   });
 
   it('returns minutes for sub-hour deltas', () => {
+    const now = Date.now();
     expect(formatTimestamp(new Date(now - 5 * 60_000).toISOString())).toBe('5m ago');
   });
 
   it('returns hours for sub-day deltas', () => {
+    const now = Date.now();
     expect(formatTimestamp(new Date(now - 3 * 3_600_000).toISOString())).toBe('3h ago');
   });
 
   it('returns days with correct pluralization', () => {
+    const now = Date.now();
     expect(formatTimestamp(new Date(now - 1 * 86_400_000).toISOString())).toBe('1 day ago');
     expect(formatTimestamp(new Date(now - 3 * 86_400_000).toISOString())).toBe('3 days ago');
   });
 
   it('returns weeks for week-range deltas', () => {
+    const now = Date.now();
     const oneWeek = 7 * 86_400_000;
     expect(formatTimestamp(new Date(now - oneWeek).toISOString())).toBe('1 week ago');
     expect(formatTimestamp(new Date(now - 3 * oneWeek).toISOString())).toBe('3 weeks ago');
@@ -90,6 +93,7 @@ describe('formatTimestamp', () => {
   });
 
   it('treats future timestamps as "Just now"', () => {
+    const now = Date.now();
     expect(formatTimestamp(new Date(now + 60_000).toISOString())).toBe('Just now');
   });
 });
