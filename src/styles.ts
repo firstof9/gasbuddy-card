@@ -208,6 +208,15 @@ export const cardStyles = css`
     box-shadow: var(--ha-card-box-shadow, 0 4px 8px rgba(0,0,0,0.1));
   }
 
+  .price-card--interactive {
+    cursor: pointer;
+  }
+
+  .price-card--interactive:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+
   .price-card-content {
     position: relative;
     z-index: 1;

@@ -226,6 +226,31 @@ export class GasBuddyCard extends LitElement {
     }
   }
 
+  // Open Home Assistant's standard more-info dialog for the given entity.
+  // Composed/bubbling so the lovelace host catches it.
+  private _showMoreInfo(entityId: string): void {
+    this.dispatchEvent(
+      new CustomEvent('hass-more-info', {
+        detail: { entityId },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private _onPriceCardActivate(entityId: string | undefined, ev: Event): void {
+    if (!entityId) return;
+    // Ignore clicks that originated inside an inner link, in case future
+    // children add their own anchors.
+    if ((ev.target as HTMLElement | null)?.closest('a')) return;
+    if (ev.type === 'keydown') {
+      const key = (ev as KeyboardEvent).key;
+      if (key !== 'Enter' && key !== ' ') return;
+      ev.preventDefault();
+    }
+    this._showMoreInfo(entityId);
+  }
+
   private _onTabKeydown = (ev: KeyboardEvent): void => {
     // Implements the WAI-ARIA Authoring Practices "Tabs with Manual Activation"
     // keyboard pattern, scoped to a two-tab carousel.
@@ -624,13 +649,21 @@ export class GasBuddyCard extends LitElement {
             cashState?.attributes?.unit_of_measurement ??
             '';
 
+          // The price card opens HA's standard more-info dialog when activated.
+          // Prefer the credit-price entity if both exist (it's what the card
+          // emphasizes as the primary number).
+          const moreInfoEntity = creditEntityId || cashEntityId;
+          const isInteractive = !!moreInfoEntity;
           return html`
             <div
-              class="price-card"
-              role="group"
+              class="price-card ${isInteractive ? 'price-card--interactive' : ''}"
+              role="${isInteractive ? 'button' : 'group'}"
+              tabindex="${isInteractive ? '0' : '-1'}"
               aria-label="${grade.name} price: ${creditPriceStr && cashPriceStr
                 ? `${creditPriceStr} ${t(this.hass, 'price_credit')}, ${cashPriceStr} ${t(this.hass, 'price_cash')}`
                 : `${displayPrice} ${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')}`}"
+              @click=${(ev: Event) => this._onPriceCardActivate(moreInfoEntity, ev)}
+              @keydown=${(ev: KeyboardEvent) => this._onPriceCardActivate(moreInfoEntity, ev)}
             >
               ${this._renderTrendGraph(creditEntityId || cashEntityId)}
               <div class="price-card-content" aria-hidden="true">
