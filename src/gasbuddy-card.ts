@@ -151,21 +151,12 @@ export class GasBuddyCard extends LitElement {
   }
 
   private async _fetchHistory(): Promise<void> {
-    console.log('GasBuddyCard: _fetchHistory called');
     if (!this.hass || !this._config || !this._config.show_trend) {
-      console.log('GasBuddyCard: skipping fetch - missing hass/config or show_trend disabled', {
-        hasHass: !!this.hass,
-        hasConfig: !!this._config,
-        showTrend: this._config?.show_trend,
-      });
       return;
     }
 
     const deviceId = this._config.device_id;
-    if (!deviceId) {
-      console.log('GasBuddyCard: skipping fetch - missing deviceId');
-      return;
-    }
+    if (!deviceId) return;
 
     const discovered = findDeviceEntities(this.hass, deviceId);
     const entities = {
@@ -187,19 +178,13 @@ export class GasBuddyCard extends LitElement {
       (eid) => eid && this.hass!.states[eid]
     ) as string[];
 
-    console.log('GasBuddyCard: resolved entityIds for history:', entityIds);
-
-    if (entityIds.length === 0) {
-      console.log('GasBuddyCard: no active entity IDs found to fetch history for');
-      return;
-    }
+    if (entityIds.length === 0) return;
 
     const trendHours = this._config.trend_hours || 168;
     const now = new Date();
     const startTime = new Date(now.getTime() - trendHours * 60 * 60 * 1000);
 
     try {
-      console.log(`GasBuddyCard: fetching history from ${startTime.toISOString()} to ${now.toISOString()}`);
       const result = (await this.hass.connection?.sendMessagePromise({
         type: 'history/history_during_period',
         start_time: startTime.toISOString(),
@@ -210,15 +195,12 @@ export class GasBuddyCard extends LitElement {
         no_attributes: true,
       })) as Record<string, HistoryPoint[]> | undefined;
 
-      console.log('GasBuddyCard: raw WebSocket history result:', result);
-
       if (result) {
         this._historyData = { ...this._historyData, ...result };
         this._lastHistoryFetch = Date.now();
-        console.log('GasBuddyCard: updated _historyData state:', this._historyData);
       }
     } catch (err) {
-      console.error('GasBuddyCard: Error fetching GasBuddy card history:', err);
+      console.error('Error fetching GasBuddy card history:', err);
     }
   }
 
@@ -550,14 +532,11 @@ export class GasBuddyCard extends LitElement {
     }
 
     const history = this._historyData[entityId];
-    console.log(`GasBuddyCard: rendering trend graph for ${entityId}, history points count:`, history?.length);
     if (!history || history.length === 0) {
-      console.log(`GasBuddyCard: no history found in state cache for ${entityId}`);
       return html``;
     }
 
     const { stroke, fill } = generateSparklinePaths(history);
-    console.log(`GasBuddyCard: computed SVG paths for ${entityId}:`, { stroke, fill });
     if (!stroke) {
       return html``;
     }
@@ -568,12 +547,12 @@ export class GasBuddyCard extends LitElement {
       <svg class="trend-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
         <defs>
           <linearGradient id="${gradId}" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.25" />
-            <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0" />
+            <stop offset="0%" stop-color="var(--accent-color)" stop-opacity="0.2" />
+            <stop offset="100%" stop-color="var(--accent-color)" stop-opacity="0" />
           </linearGradient>
         </defs>
         <path d="${fill}" fill="url(#${gradId})" />
-        <path d="${stroke}" fill="none" stroke="var(--primary-color)" stroke-width="1.5" />
+        <path d="${stroke}" fill="none" stroke="var(--accent-color)" stroke-width="1" />
       </svg>
     `;
   }
