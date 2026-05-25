@@ -38,6 +38,32 @@ export const cardStyles = css`
     line-height: 1.3;
   }
 
+  .title-link {
+    color: inherit;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .title-link:hover,
+  .title-link:focus-visible {
+    color: var(--primary-color);
+    text-decoration: underline;
+  }
+
+  .title-link-icon {
+    --mdc-icon-size: 14px;
+    color: var(--secondary-text-color);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .title-link:hover .title-link-icon,
+  .title-link:focus-visible .title-link-icon {
+    opacity: 1;
+  }
+
   .brand-logo {
     height: 40px;
     width: auto;
