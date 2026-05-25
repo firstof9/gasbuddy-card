@@ -544,7 +544,13 @@ export class GasBuddyCard extends LitElement {
     const gradId = `grad-${entityId.replace(/\./g, '-')}`;
 
     return html`
-      <svg class="trend-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
+      <svg
+        class="trend-svg"
+        viewBox="0 0 100 50"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        focusable="false"
+      >
         <defs>
           <linearGradient id="${gradId}" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stop-color="var(--accent-color)" stop-opacity="0.2" />
