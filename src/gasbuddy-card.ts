@@ -657,14 +657,54 @@ export class GasBuddyCard extends LitElement {
   }
 
   private _renderEVContent(entities: ResolvedEntities): TemplateResult {
-    const l1Id = entities.ev_level1;
-    const l2Id = entities.ev_level2;
-    const dcId = entities.ev_dc_fast;
+    return html`
+      <div class="ev-section">
+        ${this._renderChargerSummary(entities)}
+        ${this._renderConnectors(entities)}
+        ${this._renderEVMetadata(entities)}
+      </div>
+    `;
+  }
 
-    const l1Count = l1Id ? Number(this.hass!.states[l1Id]?.state) || 0 : 0;
-    const l2Count = l2Id ? Number(this.hass!.states[l2Id]?.state) || 0 : 0;
-    const dcCount = dcId ? Number(this.hass!.states[dcId]?.state) || 0 : 0;
+  private _renderChargerSummary(entities: ResolvedEntities): TemplateResult {
+    const numericState = (id?: string): number => (id ? Number(this.hass!.states[id]?.state) || 0 : 0);
+    const l1Count = numericState(entities.ev_level1);
+    const l2Count = numericState(entities.ev_level2);
+    const dcCount = numericState(entities.ev_dc_fast);
 
+    return html`
+      <div class="charger-summary">
+        ${l1Count > 0
+          ? this._renderChargerBadge(l1Count, t(this.hass, 'charger_level1'), 'mdi:ev-station')
+          : ''}
+        ${l2Count > 0
+          ? this._renderChargerBadge(l2Count, t(this.hass, 'charger_level2'), 'mdi:ev-station')
+          : ''}
+        ${dcCount > 0
+          ? this._renderChargerBadge(dcCount, t(this.hass, 'charger_dc_fast'), 'mdi:flash', true)
+          : ''}
+      </div>
+    `;
+  }
+
+  private _renderChargerBadge(
+    count: number,
+    label: string,
+    icon: string,
+    fast = false,
+  ): TemplateResult {
+    return html`
+      <div class="charger-badge ${fast ? 'fast' : ''}" role="group" aria-label="${count} ${label} chargers">
+        <ha-icon icon="${icon}" aria-hidden="true"></ha-icon>
+        <div class="charger-info" aria-hidden="true">
+          <span class="charger-count">${count}</span>
+          <span class="charger-label">${label}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  private _renderConnectors(entities: ResolvedEntities): TemplateResult {
     const connectors = [
       { name: 'J1772', countId: entities.ev_j1772, powerId: entities.ev_j1772_power },
       { name: 'CCS', countId: entities.ev_ccs, powerId: entities.ev_ccs_power },
@@ -679,150 +719,113 @@ export class GasBuddyCard extends LitElement {
         Number(this.hass!.states[c.countId]?.state) > 0,
     );
 
-    const networkName = entities.ev_network ? this.hass!.states[entities.ev_network]?.state : '';
-    const networkStateObj = entities.ev_network ? this.hass!.states[entities.ev_network] : undefined;
-    const website = networkStateObj?.attributes ? (networkStateObj.attributes.website as string) : undefined;
-    const pricing = entities.ev_pricing ? this.hass!.states[entities.ev_pricing]?.state : '';
-    const hours = entities.ev_access_hours ? this.hass!.states[entities.ev_access_hours]?.state : '';
-    const acceptedCards = entities.ev_cards_accepted ? this.hass!.states[entities.ev_cards_accepted]?.state : '';
-    const status = entities.ev_status ? this.hass!.states[entities.ev_status]?.state : '';
-    const lastConfirmed = entities.ev_date_last_confirmed
-      ? this.hass!.states[entities.ev_date_last_confirmed]?.state
-      : '';
+    if (activeConnectors.length === 0) return html``;
 
     return html`
-      <div class="ev-section">
-        <!-- Charger Badge Summary -->
-        <div class="charger-summary">
-          ${l1Count > 0
-            ? html`
-                <div class="charger-badge" role="group" aria-label="${l1Count} ${t(this.hass, 'charger_level1')} chargers">
-                  <ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>
-                  <div class="charger-info" aria-hidden="true">
-                    <span class="charger-count">${l1Count}</span>
-                    <span class="charger-label">${t(this.hass, 'charger_level1')}</span>
-                  </div>
+      <div>
+        <div class="connector-section-title">${t(this.hass, 'connectors_heading')}</div>
+        <div class="connectors-grid">
+          ${activeConnectors.map((c) => {
+            const count = this.hass!.states[c.countId!]?.state || '0';
+            const power = c.powerId ? this.hass!.states[c.powerId]?.state : undefined;
+            const hasPower = power && power !== 'unknown' && power !== 'unavailable';
+            return html`
+              <div
+                class="connector-card"
+                role="group"
+                aria-label="${count} ${c.name} connectors${hasPower ? `, power capacity ${power} kilowatts` : ''}"
+              >
+                <div class="connector-name" aria-hidden="true">${c.name}</div>
+                <div class="connector-details" aria-hidden="true">
+                  <span class="connector-count">${count}x</span>
+                  ${hasPower ? html`<span class="connector-power">${power} kW</span>` : ''}
                 </div>
-              `
-            : ''}
-          ${l2Count > 0
-            ? html`
-                <div class="charger-badge" role="group" aria-label="${l2Count} ${t(this.hass, 'charger_level2')} chargers">
-                  <ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>
-                  <div class="charger-info" aria-hidden="true">
-                    <span class="charger-count">${l2Count}</span>
-                    <span class="charger-label">${t(this.hass, 'charger_level2')}</span>
-                  </div>
-                </div>
-              `
-            : ''}
-          ${dcCount > 0
-            ? html`
-                <div class="charger-badge fast" role="group" aria-label="${dcCount} ${t(this.hass, 'charger_dc_fast')} chargers">
-                  <ha-icon icon="mdi:flash" aria-hidden="true"></ha-icon>
-                  <div class="charger-info" aria-hidden="true">
-                    <span class="charger-count">${dcCount}</span>
-                    <span class="charger-label">${t(this.hass, 'charger_dc_fast')}</span>
-                  </div>
-                </div>
-              `
-            : ''}
+              </div>
+            `;
+          })}
         </div>
+      </div>
+    `;
+  }
 
-        <!-- Connectors Grid -->
-        ${activeConnectors.length > 0
+  private _renderEVMetadata(entities: ResolvedEntities): TemplateResult {
+    const stateOf = (id?: string): string =>
+      id ? (this.hass!.states[id]?.state as string) || '' : '';
+    const present = (s: string): boolean => !!s && s !== 'unknown' && s !== 'unavailable';
+
+    const networkName = stateOf(entities.ev_network);
+    const networkStateObj = entities.ev_network ? this.hass!.states[entities.ev_network] : undefined;
+    const website = networkStateObj?.attributes?.website as string | undefined;
+    const pricing = stateOf(entities.ev_pricing);
+    const hours = stateOf(entities.ev_access_hours);
+    const acceptedCards = stateOf(entities.ev_cards_accepted);
+    const status = stateOf(entities.ev_status);
+    const lastConfirmed = stateOf(entities.ev_date_last_confirmed);
+
+    return html`
+      <div class="metadata-list">
+        ${present(networkName)
           ? html`
-              <div>
-                <div class="connector-section-title">${t(this.hass, 'connectors_heading')}</div>
-                <div class="connectors-grid">
-                  ${activeConnectors.map((c) => {
-                    const count = this.hass!.states[c.countId!]?.state || '0';
-                    const power = c.powerId ? this.hass!.states[c.powerId]?.state : undefined;
-                    const hasPower = power && power !== 'unknown' && power !== 'unavailable';
-                    return html`
-                      <div
-                        class="connector-card"
-                        role="group"
-                        aria-label="${count} ${c.name} connectors${hasPower ? `, power capacity ${power} kilowatts` : ''}"
-                      >
-                        <div class="connector-name" aria-hidden="true">${c.name}</div>
-                        <div class="connector-details" aria-hidden="true">
-                          <span class="connector-count">${count}x</span>
-                          ${hasPower ? html`<span class="connector-power">${power} kW</span>` : ''}
-                        </div>
-                      </div>
-                    `;
-                  })}
-                </div>
+              <div class="metadata-item">
+                <span class="metadata-key">${t(this.hass, 'meta_network')}</span>
+                <span
+                  class="metadata-val network-name"
+                  style="--gasbuddy-network-color: ${getNetworkColor(String(networkName))}"
+                >
+                  ${website
+                    ? html`<a href="${website}" target="_blank" rel="noopener noreferrer">${networkName}</a>`
+                    : networkName}
+                </span>
               </div>
             `
           : ''}
-
-        <!-- Details List -->
-        <div class="metadata-list">
-          ${networkName && networkName !== 'unknown' && networkName !== 'unavailable'
-            ? html`
-                <div class="metadata-item">
-                  <span class="metadata-key">${t(this.hass, 'meta_network')}</span>
-                  <span
-                    class="metadata-val network-name"
-                    style="--gasbuddy-network-color: ${getNetworkColor(String(networkName))}"
-                  >
-                    ${website
-                      ? html`<a href="${website}" target="_blank" rel="noopener noreferrer">${networkName}</a>`
-                      : networkName}
-                  </span>
-                </div>
-              `
-            : ''}
-          ${status && status !== 'unknown' && status !== 'unavailable'
-            ? html`
-                <div class="metadata-item">
-                  <span class="metadata-key">${t(this.hass, 'meta_status')}</span>
-                  <span class="metadata-val">${String(status).toUpperCase()}</span>
-                </div>
-              `
-            : ''}
-          ${pricing && pricing !== 'unknown' && pricing !== 'unavailable'
-            ? html`
-                <div class="metadata-item">
-                  <span class="metadata-key">${t(this.hass, 'meta_pricing')}</span>
-                  <span class="metadata-val">${pricing}</span>
-                </div>
-              `
-            : ''}
-          ${hours && hours !== 'unknown' && hours !== 'unavailable'
-            ? html`
-                <div class="metadata-item">
-                  <span class="metadata-key">${t(this.hass, 'meta_access_hours')}</span>
-                  <span class="metadata-val">${hours}</span>
-                </div>
-              `
-            : ''}
-          ${acceptedCards && acceptedCards !== 'unknown' && acceptedCards !== 'unavailable'
-            ? html`
-                <div class="metadata-item">
-                  <span class="metadata-key">${t(this.hass, 'meta_payments')}</span>
-                  <span class="metadata-val">
-                    ${(() => {
-                      const icons = getPaymentIcons(String(acceptedCards));
-                      return icons.length > 0
-                        ? html`<div class="payment-icons-container">${icons}</div>`
-                        : acceptedCards;
-                    })()}
-                  </span>
-                </div>
-              `
-            : ''}
-          ${lastConfirmed && lastConfirmed !== 'unknown' && lastConfirmed !== 'unavailable'
-            ? html`
-                <div class="metadata-item">
-                  <span class="metadata-key">${t(this.hass, 'meta_last_confirmed')}</span>
-                  <span class="metadata-val">${formatTimestamp(lastConfirmed)}</span>
-                </div>
-              `
-            : ''}
-        </div>
+        ${present(status)
+          ? html`
+              <div class="metadata-item">
+                <span class="metadata-key">${t(this.hass, 'meta_status')}</span>
+                <span class="metadata-val">${String(status).toUpperCase()}</span>
+              </div>
+            `
+          : ''}
+        ${present(pricing)
+          ? html`
+              <div class="metadata-item">
+                <span class="metadata-key">${t(this.hass, 'meta_pricing')}</span>
+                <span class="metadata-val">${pricing}</span>
+              </div>
+            `
+          : ''}
+        ${present(hours)
+          ? html`
+              <div class="metadata-item">
+                <span class="metadata-key">${t(this.hass, 'meta_access_hours')}</span>
+                <span class="metadata-val">${hours}</span>
+              </div>
+            `
+          : ''}
+        ${present(acceptedCards)
+          ? html`
+              <div class="metadata-item">
+                <span class="metadata-key">${t(this.hass, 'meta_payments')}</span>
+                <span class="metadata-val">
+                  ${(() => {
+                    const icons = getPaymentIcons(String(acceptedCards));
+                    return icons.length > 0
+                      ? html`<div class="payment-icons-container">${icons}</div>`
+                      : acceptedCards;
+                  })()}
+                </span>
+              </div>
+            `
+          : ''}
+        ${present(lastConfirmed)
+          ? html`
+              <div class="metadata-item">
+                <span class="metadata-key">${t(this.hass, 'meta_last_confirmed')}</span>
+                <span class="metadata-val">${formatTimestamp(lastConfirmed)}</span>
+              </div>
+            `
+          : ''}
       </div>
     `;
   }
