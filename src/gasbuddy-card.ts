@@ -219,6 +219,14 @@ export class GasBuddyCard extends LitElement {
     }
   }
 
+  private _onSelectGasTab = (): void => {
+    this._activeTab = 'gas';
+  };
+
+  private _onSelectEvTab = (): void => {
+    this._activeTab = 'ev';
+  };
+
   private _onTabKeydown = (ev: KeyboardEvent): void => {
     // Implements the WAI-ARIA Authoring Practices "Tabs with Manual Activation"
     // keyboard pattern, scoped to a two-tab carousel.
@@ -504,7 +512,7 @@ export class GasBuddyCard extends LitElement {
           aria-selected="${currentTab === 'gas' ? 'true' : 'false'}"
           aria-controls="gasbuddy-panel-gas"
           tabindex="${currentTab === 'gas' ? '0' : '-1'}"
-          @click=${() => (this._activeTab = 'gas')}
+          @click=${this._onSelectGasTab}
           @keydown=${this._onTabKeydown}
         >
           ${t(this.hass, 'tab_gas')}
@@ -516,7 +524,7 @@ export class GasBuddyCard extends LitElement {
           aria-selected="${currentTab === 'ev' ? 'true' : 'false'}"
           aria-controls="gasbuddy-panel-ev"
           tabindex="${currentTab === 'ev' ? '0' : '-1'}"
-          @click=${() => (this._activeTab = 'ev')}
+          @click=${this._onSelectEvTab}
           @keydown=${this._onTabKeydown}
         >
           ${t(this.hass, 'tab_ev')}
