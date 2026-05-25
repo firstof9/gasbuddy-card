@@ -220,7 +220,11 @@ export class GasBuddyCard extends LitElement {
   };
 
   protected override shouldUpdate(changedProperties: PropertyValues): boolean {
-    if (changedProperties.has('_config') || changedProperties.has('_activeTab')) {
+    if (
+      changedProperties.has('_config') ||
+      changedProperties.has('_activeTab') ||
+      changedProperties.has('_historyData')
+    ) {
       return true;
     }
 
@@ -543,12 +547,12 @@ export class GasBuddyCard extends LitElement {
       <svg class="trend-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
         <defs>
           <linearGradient id="${gradId}" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.25" />
-            <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0" />
+            <stop offset="0%" stop-color="var(--accent-color)" stop-opacity="0.2" />
+            <stop offset="100%" stop-color="var(--accent-color)" stop-opacity="0" />
           </linearGradient>
         </defs>
         <path d="${fill}" fill="url(#${gradId})" />
-        <path d="${stroke}" fill="none" stroke="var(--primary-color)" stroke-width="1.5" />
+        <path d="${stroke}" fill="none" stroke="var(--accent-color)" stroke-width="1" />
       </svg>
     `;
   }
