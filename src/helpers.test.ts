@@ -258,5 +258,16 @@ describe('generateSparklinePaths', () => {
       fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
     });
   });
+
+  it('supports Home Assistant optimized s and lu keys', () => {
+    const history = [
+      { s: '3.00', lu: 1716300000 },
+      { s: '4.00', lu: 1716386400 }
+    ];
+    expect(generateSparklinePaths(history)).toEqual({
+      stroke: 'M 0.0,40.0 L 100.0,10.0',
+      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+    });
+  });
 });
 

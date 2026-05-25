@@ -353,6 +353,8 @@ export function getPaymentIcons(cardsString: string): TemplateResult[] {
 export interface HistoryPoint {
   s?: string;
   t?: number;
+  lu?: number;
+  lc?: number;
   state?: string;
   last_updated?: string | number;
   last_changed?: string | number;
@@ -382,7 +384,7 @@ export function generateSparklinePaths(
   const points = history
     .map((d) => {
       const stateStr = d.s !== undefined ? d.s : d.state;
-      const rawTime = d.t !== undefined ? d.t : (d.last_updated !== undefined ? d.last_updated : d.last_changed);
+      const rawTime = d.t !== undefined ? d.t : (d.lu !== undefined ? d.lu : (d.lc !== undefined ? d.lc : (d.last_updated !== undefined ? d.last_updated : d.last_changed)));
 
       const val = Number(stateStr);
       let time = NaN;
