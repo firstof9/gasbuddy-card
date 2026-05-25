@@ -11,7 +11,9 @@ import {
   formatDistance,
   formatTimestamp,
   generateSparklinePaths,
+  computePriceTrend,
   type HistoryPoint,
+  type PriceTrend,
 } from './helpers.js';
 import { t } from './i18n.js';
 
@@ -144,7 +146,7 @@ export class GasBuddyCard extends LitElement {
       active?.focus();
     }
 
-    if (!this._config?.show_trend) {
+    if (!this._needsHistory()) {
       return;
     }
 
@@ -158,8 +160,15 @@ export class GasBuddyCard extends LitElement {
     }
   }
 
+  // Either the background sparkline or the inline trend chip needs the
+  // history dataset; we fetch once and both features read from the same
+  // _historyData cache.
+  private _needsHistory(): boolean {
+    return !!(this._config?.show_trend || this._config?.show_trend_indicator);
+  }
+
   private async _fetchHistory(): Promise<void> {
-    if (!this.hass || !this._config || !this._config.show_trend) {
+    if (!this.hass || !this._config || !this._needsHistory()) {
       return;
     }
 
@@ -549,6 +558,39 @@ export class GasBuddyCard extends LitElement {
     `;
   }
 
+  // Inline trend chip rendered next to the price. Reads the same
+  // _historyData the sparkline reads; null if the indicator is disabled,
+  // there's no entity, or we don't have enough history to compare.
+  private _renderTrendIndicator(entityId?: string): TemplateResult {
+    if (!this._config?.show_trend_indicator || !entityId) return html``;
+    const history = this._historyData[entityId];
+    if (!history || history.length < 2) return html``;
+    const baseline = this._config.trend_indicator_baseline_hours ?? 24;
+    const trend = computePriceTrend(history, baseline);
+    if (!trend) return html``;
+    return this._trendIndicatorTemplate(trend);
+  }
+
+  private _trendIndicatorTemplate(trend: PriceTrend): TemplateResult {
+    const icon =
+      trend.direction === 'up'
+        ? 'mdi:arrow-up-thin'
+        : trend.direction === 'down'
+        ? 'mdi:arrow-down-thin'
+        : 'mdi:approximately-equal';
+    const percentText = trend.direction === 'flat' ? '' : `${trend.percent.toFixed(1)}%`;
+    const ariaLabel =
+      trend.direction === 'flat'
+        ? `Price unchanged over the last ${Math.round(trend.hoursCompared)} hours`
+        : `Price ${trend.direction} ${trend.percent.toFixed(1)} percent over the last ${Math.round(trend.hoursCompared)} hours`;
+    return html`
+      <span class="trend-indicator trend-indicator--${trend.direction}" aria-label="${ariaLabel}">
+        <ha-icon class="trend-indicator-icon" icon="${icon}" aria-hidden="true"></ha-icon>
+        ${percentText ? html`<span aria-hidden="true">${percentText}</span>` : ''}
+      </span>
+    `;
+  }
+
   private _renderTrendGraph(entityId?: string): TemplateResult {
     if (!this._config?.show_trend || !entityId) {
       return html``;
@@ -653,6 +695,7 @@ export class GasBuddyCard extends LitElement {
                       <div class="fuel-price">${displayPrice}</div>
                       <div class="price-label">${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')}</div>
                     `}
+                ${this._renderTrendIndicator(creditEntityId || cashEntityId)}
                 <div class="fuel-meta">
                   <span>${unit || 'USD'}</span>
                 </div>

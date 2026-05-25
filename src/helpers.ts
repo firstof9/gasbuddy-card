@@ -365,6 +365,114 @@ export interface SVGPathResult {
   fill: string;
 }
 
+export interface PriceTrend {
+  // Direction relative to the baseline: down (price dropped — good for the
+  // driver) / up / flat (within ±FLAT_THRESHOLD_PERCENT).
+  direction: 'down' | 'up' | 'flat';
+  // Absolute percent change between baseline and latest. Always positive.
+  percent: number;
+  // The two raw values used to compute the trend, for display/debug.
+  baseline: number;
+  latest: number;
+  // Approximate hours actually compared (closest history point we found
+  // before `baselineHours` ago — may differ if data is sparse).
+  hoursCompared: number;
+}
+
+// How far either side of zero counts as "flat" to avoid noisy ±0.0% arrows.
+const FLAT_THRESHOLD_PERCENT = 0.5;
+
+/**
+ * Parses a history dataset into normalized (value, timeSeconds) points,
+ * filtering out non-numeric states. Supports both shorthand (s/t/lu/lc)
+ * and standard (state/last_updated/last_changed) HA history shapes plus
+ * numeric-string timestamps. Shared by sparkline + trend computation so
+ * the two stay consistent.
+ */
+function parseHistoryPoints(history: HistoryPoint[] | undefined): Array<{ val: number; time: number }> {
+  if (!history || history.length === 0) return [];
+  const out: Array<{ val: number; time: number }> = [];
+  for (const d of history) {
+    const stateStr = d.s !== undefined ? d.s : d.state;
+    const rawTime =
+      d.t !== undefined ? d.t
+      : d.lu !== undefined ? d.lu
+      : d.lc !== undefined ? d.lc
+      : d.last_updated !== undefined ? d.last_updated
+      : d.last_changed;
+
+    const val = Number(stateStr);
+    let time = NaN;
+    if (typeof rawTime === 'number') {
+      time = rawTime;
+    } else if (typeof rawTime === 'string') {
+      const parsedNum = Number(rawTime);
+      if (!isNaN(parsedNum)) {
+        time = parsedNum;
+      } else {
+        time = Date.parse(rawTime) / 1000;
+      }
+    }
+    if (!isNaN(val) && !isNaN(time)) {
+      out.push({ val, time });
+    }
+  }
+  return out;
+}
+
+/**
+ * Computes the price-trend direction and magnitude relative to a baseline
+ * `baselineHours` ago. Returns null when the history is too sparse to
+ * compare meaningfully (no points, only one valid point, or baseline
+ * value is zero so the percent change is undefined).
+ *
+ * "Latest" is the most-recently-timestamped valid point. "Baseline" is
+ * the valid point with the smallest absolute time delta from
+ * (latest.time − baselineHours), so a request for 24h compared against a
+ * dataset that only has a 36h-old next-oldest point still returns
+ * something useful and reports it via `hoursCompared`.
+ */
+export function computePriceTrend(
+  history: HistoryPoint[] | undefined,
+  baselineHours: number,
+): PriceTrend | null {
+  const points = parseHistoryPoints(history);
+  if (points.length < 2) return null;
+
+  let latest = points[0];
+  for (const p of points) {
+    if (p.time > latest.time) latest = p;
+  }
+
+  const targetTime = latest.time - baselineHours * 3600;
+  let baseline = points[0];
+  let bestDelta = Infinity;
+  for (const p of points) {
+    if (p === latest) continue;
+    const delta = Math.abs(p.time - targetTime);
+    if (delta < bestDelta) {
+      bestDelta = delta;
+      baseline = p;
+    }
+  }
+
+  if (baseline === latest) return null;
+  if (baseline.val === 0) return null;
+
+  const pctChange = ((latest.val - baseline.val) / baseline.val) * 100;
+  const abs = Math.abs(pctChange);
+  const direction: PriceTrend['direction'] =
+    abs < FLAT_THRESHOLD_PERCENT ? 'flat' : pctChange > 0 ? 'up' : 'down';
+
+  return {
+    direction,
+    percent: abs,
+    baseline: baseline.val,
+    latest: latest.val,
+    hoursCompared: Math.abs(latest.time - baseline.time) / 3600,
+  };
+}
+
 /**
  * Generates SVG path commands (stroke and fill) for a given history dataset.
  * Fits coordinates into viewBox 0 0 100 50.
