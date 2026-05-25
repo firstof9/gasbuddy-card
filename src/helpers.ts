@@ -561,4 +561,95 @@ export function generateSparklinePaths(
   return { stroke, fill };
 }
 
+export interface SparklineExtreme {
+  // Normalized viewBox coordinates (0..100 horizontal, 0..50 vertical).
+  x: number;
+  y: number;
+  // The original sensor value at this point.
+  value: number;
+}
+
+export interface SparklineExtremes {
+  min: SparklineExtreme;
+  max: SparklineExtreme;
+}
+
+/**
+ * Returns the lowest- and highest-value points in `history` mapped into
+ * the same `0 0 100 50` viewBox that generateSparklinePaths plots into,
+ * so a caller can drop a marker (e.g. `<circle cx cy>`) directly on top
+ * of the sparkline at those positions.
+ *
+ * Returns null when:
+ *  - history is empty or has no numeric points (nothing to mark)
+ *  - all values are equal (no meaningful min vs max)
+ *  - only one valid point exists (the sparkline draws a flat line; a
+ *    marker would be redundant)
+ *
+ * minY / maxY default to the same 40 / 10 that generateSparklinePaths
+ * uses, so callers don't have to repeat them.
+ */
+export function getSparklineExtremes(
+  history: HistoryPoint[] | undefined,
+  minY: number = 40,
+  maxY: number = 10,
+): SparklineExtremes | null {
+  if (!history || history.length === 0) return null;
+
+  // Same parse pass as generateSparklinePaths — kept inline (not extracted
+  // into a shared helper) so this PR doesn't touch the prior function.
+  const points: Array<{ val: number; time: number }> = [];
+  for (const d of history) {
+    const stateStr = d.s !== undefined ? d.s : d.state;
+    const rawTime =
+      d.t !== undefined ? d.t
+      : d.lu !== undefined ? d.lu
+      : d.lc !== undefined ? d.lc
+      : d.last_updated !== undefined ? d.last_updated
+      : d.last_changed;
+    const val = Number(stateStr);
+    let time = NaN;
+    if (typeof rawTime === 'number') {
+      time = rawTime;
+    } else if (typeof rawTime === 'string') {
+      const parsedNum = Number(rawTime);
+      time = isNaN(parsedNum) ? Date.parse(rawTime) / 1000 : parsedNum;
+    }
+    if (!isNaN(val) && !isNaN(time)) {
+      points.push({ val, time });
+    }
+  }
+
+  if (points.length < 2) return null;
+
+  let minTime = points[0].time;
+  let maxTime = points[0].time;
+  let minIdx = 0;
+  let maxIdx = 0;
+  for (let i = 1; i < points.length; i++) {
+    const { time, val } = points[i];
+    if (time < minTime) minTime = time;
+    else if (time > maxTime) maxTime = time;
+    if (val < points[minIdx].val) minIdx = i;
+    if (val > points[maxIdx].val) maxIdx = i;
+  }
+
+  // All values equal → no meaningful min/max to mark.
+  if (points[minIdx].val === points[maxIdx].val) return null;
+
+  const timeDiff = maxTime - minTime || 1;
+  const valDiff = points[maxIdx].val - points[minIdx].val;
+
+  const toCoord = (p: { val: number; time: number }) => ({
+    x: ((p.time - minTime) / timeDiff) * 100,
+    y: minY - ((p.val - points[minIdx].val) / valDiff) * (minY - maxY),
+    value: p.val,
+  });
+
+  return {
+    min: toCoord(points[minIdx]),
+    max: toCoord(points[maxIdx]),
+  };
+}
+
 

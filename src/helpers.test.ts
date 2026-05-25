@@ -8,6 +8,7 @@ import {
   getPaymentIcons,
   generateSparklinePaths,
   computePriceTrend,
+  getSparklineExtremes,
 } from './helpers.js';
 import type { HomeAssistant } from './types.js';
 
@@ -509,6 +510,93 @@ describe('computePriceTrend', () => {
     )!;
     expect(result.direction).toBe('down');
     expect(result.percent).toBeCloseTo(25, 5);
+  });
+});
+
+describe('getSparklineExtremes', () => {
+  it('returns null for empty or undefined history', () => {
+    expect(getSparklineExtremes(undefined)).toBeNull();
+    expect(getSparklineExtremes([])).toBeNull();
+  });
+
+  it('returns null when fewer than 2 valid points survive parsing', () => {
+    expect(getSparklineExtremes([{ s: '3.50', t: 100 }])).toBeNull();
+    expect(
+      getSparklineExtremes([
+        { s: '3.50', t: 100 },
+        { s: 'unavailable', t: 200 },
+      ]),
+    ).toBeNull();
+  });
+
+  it('returns null when all values are equal (no meaningful extremes)', () => {
+    expect(
+      getSparklineExtremes([
+        { s: '3.50', t: 100 },
+        { s: '3.50', t: 200 },
+        { s: '3.50', t: 300 },
+      ]),
+    ).toBeNull();
+  });
+
+  it('maps min and max into the same default viewBox as the sparkline', () => {
+    // Two points: t=1000 → x=0, t=2000 → x=100; val=3 → minVal → y=40,
+    // val=4 → maxVal → y=10. Min point coords ≈ (0, 40), max ≈ (100, 10).
+    const extremes = getSparklineExtremes([
+      { s: '3.00', t: 1000 },
+      { s: '4.00', t: 2000 },
+    ])!;
+    expect(extremes.min).toEqual({ x: 0, y: 40, value: 3.0 });
+    expect(extremes.max).toEqual({ x: 100, y: 10, value: 4.0 });
+  });
+
+  it('honors custom minY and maxY parameters', () => {
+    // minY=30, maxY=20 → Y range 10; val 3 → 30 (min), val 4 → 20 (max).
+    const extremes = getSparklineExtremes(
+      [
+        { s: '3.00', t: 1000 },
+        { s: '4.00', t: 2000 },
+      ],
+      30,
+      20,
+    )!;
+    expect(extremes.min.y).toBe(30);
+    expect(extremes.max.y).toBe(20);
+  });
+
+  it('picks the right extremes when min/max are not at the endpoints', () => {
+    // Order: 3.50 (between), 3.00 (min), 4.00 (max), 3.20 (between).
+    const extremes = getSparklineExtremes([
+      { s: '3.50', t: 1000 },
+      { s: '3.00', t: 2000 },
+      { s: '4.00', t: 3000 },
+      { s: '3.20', t: 4000 },
+    ])!;
+    expect(extremes.min.value).toBe(3.0);
+    expect(extremes.max.value).toBe(4.0);
+    // Time mapping: t=1000→0, t=2000→33.3, t=3000→66.7, t=4000→100.
+    expect(extremes.min.x).toBeCloseTo(33.33, 1);
+    expect(extremes.max.x).toBeCloseTo(66.67, 1);
+  });
+
+  it('supports the standard state/last_updated keys', () => {
+    const extremes = getSparklineExtremes([
+      { state: '3.00', last_updated: '2026-05-24T20:00:00.000Z' },
+      { state: '4.00', last_updated: '2026-05-24T21:00:00.000Z' },
+    ])!;
+    expect(extremes.min.value).toBe(3.0);
+    expect(extremes.max.value).toBe(4.0);
+  });
+
+  it('drops invalid points and computes extremes over the survivors', () => {
+    const extremes = getSparklineExtremes([
+      { s: '3.00', t: 1000 },
+      { s: 'unavailable', t: 1500 },
+      { s: '4.00', t: 2000 },
+      { s: 'unknown', t: 2500 },
+    ])!;
+    expect(extremes.min.value).toBe(3.0);
+    expect(extremes.max.value).toBe(4.0);
   });
 });
 
