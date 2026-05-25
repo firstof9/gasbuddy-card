@@ -42,6 +42,8 @@ export interface GasBuddyCardConfig {
   device_id?: string;
   title?: string;
   default_mode?: 'gas' | 'ev';
+  show_trend?: boolean;
+  trend_hours?: number;
   
   // Overrides for specific sensors
   regular_gas_entity?: string;

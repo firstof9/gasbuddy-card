@@ -10,6 +10,8 @@ import {
   formatPrice,
   formatDistance,
   formatTimestamp,
+  generateSparklinePaths,
+  type HistoryPoint,
 } from './helpers.js';
 
 // Register the custom element editor
@@ -20,6 +22,8 @@ export class GasBuddyCard extends LitElement {
   @property({ attribute: false }) public hass?: HomeAssistant;
   @state() private _config?: GasBuddyCardConfig;
   @state() private _activeTab: 'gas' | 'ev' = 'gas';
+  @state() private _historyData: Record<string, HistoryPoint[]> = {};
+  private _lastHistoryFetch?: number;
 
   public static override styles = cardStyles;
 
@@ -35,6 +39,77 @@ export class GasBuddyCard extends LitElement {
 
   public getCardSize(): number {
     return 4;
+  }
+
+  protected override updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+
+    if (!this._config?.show_trend) {
+      return;
+    }
+
+    const shouldFetch =
+      changedProperties.has('_config') ||
+      (changedProperties.has('hass') &&
+        (!this._lastHistoryFetch || Date.now() - this._lastHistoryFetch > 10 * 60 * 1000));
+
+    if (shouldFetch) {
+      this._fetchHistory();
+    }
+  }
+
+  private async _fetchHistory(): Promise<void> {
+    if (!this.hass || !this._config || !this._config.show_trend) {
+      return;
+    }
+
+    const deviceId = this._config.device_id;
+    if (!deviceId) return;
+
+    const discovered = findDeviceEntities(this.hass, deviceId);
+    const entities = {
+      regular_gas: this._config.regular_gas_entity || discovered.regular_gas,
+      midgrade_gas: this._config.midgrade_gas_entity || discovered.midgrade_gas,
+      premium_gas: this._config.premium_gas_entity || discovered.premium_gas,
+      diesel: this._config.diesel_entity || discovered.diesel,
+      regular_gas_cash: this._config.regular_gas_cash_entity || discovered.regular_gas_cash,
+      midgrade_gas_cash: this._config.midgrade_gas_cash_entity || discovered.midgrade_gas_cash,
+      premium_gas_cash: this._config.premium_gas_cash_entity || discovered.premium_gas_cash,
+      diesel_cash: this._config.diesel_cash_entity || discovered.diesel_cash,
+      e85: this._config.e85_entity || discovered.e85,
+      e85_cash: this._config.e85_cash_entity || discovered.e85_cash,
+      e15: this._config.e15_entity || discovered.e15,
+      e15_cash: this._config.e15_cash_entity || discovered.e15_cash,
+    };
+
+    const entityIds = Object.values(entities).filter(
+      (eid) => eid && this.hass!.states[eid]
+    ) as string[];
+
+    if (entityIds.length === 0) return;
+
+    const trendHours = this._config.trend_hours || 168;
+    const now = new Date();
+    const startTime = new Date(now.getTime() - trendHours * 60 * 60 * 1000);
+
+    try {
+      const result = (await this.hass.connection?.sendMessagePromise({
+        type: 'history/history_during_period',
+        start_time: startTime.toISOString(),
+        end_time: now.toISOString(),
+        entity_ids: entityIds,
+        include_start_time_state: true,
+        significant_changes_only: false,
+        no_attributes: true,
+      })) as Record<string, HistoryPoint[]> | undefined;
+
+      if (result) {
+        this._historyData = { ...this._historyData, ...result };
+        this._lastHistoryFetch = Date.now();
+      }
+    } catch (err) {
+      console.error('Error fetching GasBuddy card history:', err);
+    }
   }
 
   protected override shouldUpdate(changedProperties: PropertyValues): boolean {
@@ -352,6 +427,37 @@ export class GasBuddyCard extends LitElement {
     `;
   }
 
+  private _renderTrendGraph(entityId?: string): TemplateResult {
+    if (!this._config?.show_trend || !entityId) {
+      return html``;
+    }
+
+    const history = this._historyData[entityId];
+    if (!history || history.length === 0) {
+      return html``;
+    }
+
+    const { stroke, fill } = generateSparklinePaths(history);
+    if (!stroke) {
+      return html``;
+    }
+
+    const gradId = `grad-${entityId.replace(/\./g, '-')}`;
+
+    return html`
+      <svg class="trend-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="${gradId}" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.25" />
+            <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <path d="${fill}" fill="url(#${gradId})" />
+        <path d="${stroke}" fill="none" stroke="var(--primary-color)" stroke-width="1.5" />
+      </svg>
+    `;
+  }
+
   private _renderGasContent(entities: Record<string, string | undefined>): TemplateResult {
     const fuelGrades = [
       { key: 'regular_gas', name: 'Regular', cashKey: 'regular_gas_cash' },
@@ -398,7 +504,8 @@ export class GasBuddyCard extends LitElement {
 
           return html`
             <div class="price-card" role="group" aria-label="${grade.name} price: ${creditPriceStr && cashPriceStr ? `${creditPriceStr} Credit, ${cashPriceStr} Cash` : `${displayPrice} ${creditPriceStr ? 'Credit' : 'Cash'}`}">
-              <div aria-hidden="true">
+              ${this._renderTrendGraph(creditEntityId || cashEntityId)}
+              <div class="price-card-content" aria-hidden="true">
                 <div class="fuel-type">${grade.name}</div>
                 ${hasBoth
                   ? html`
