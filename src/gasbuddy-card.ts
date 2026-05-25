@@ -25,6 +25,10 @@ export class GasBuddyCard extends LitElement {
   @state() private _historyData: Record<string, HistoryPoint[]> = {};
   private _lastHistoryFetch?: number;
 
+  // Set when a keyboard-driven tab switch needs to move focus to the
+  // newly-active tab after the next render. Not a reactive @state.
+  private _moveFocusToActiveTab = false;
+
   public static override styles = cardStyles;
 
   public setConfig(config: GasBuddyCardConfig): void {
@@ -43,6 +47,12 @@ export class GasBuddyCard extends LitElement {
 
   protected override updated(changedProperties: PropertyValues): void {
     super.updated(changedProperties);
+
+    if (this._moveFocusToActiveTab) {
+      this._moveFocusToActiveTab = false;
+      const active = this.renderRoot.querySelector<HTMLElement>('.tab.active');
+      active?.focus();
+    }
 
     if (!this._config?.show_trend) {
       return;
@@ -111,6 +121,21 @@ export class GasBuddyCard extends LitElement {
       console.error('Error fetching GasBuddy card history:', err);
     }
   }
+
+  private _onTabKeydown = (ev: KeyboardEvent): void => {
+    // Implements the WAI-ARIA Authoring Practices "Tabs with Manual Activation"
+    // keyboard pattern, scoped to a two-tab carousel.
+    if (
+      ev.key === 'ArrowLeft' ||
+      ev.key === 'ArrowRight' ||
+      ev.key === 'Home' ||
+      ev.key === 'End'
+    ) {
+      ev.preventDefault();
+      this._activeTab = this._activeTab === 'gas' ? 'ev' : 'gas';
+      this._moveFocusToActiveTab = true;
+    }
+  };
 
   protected override shouldUpdate(changedProperties: PropertyValues): boolean {
     if (changedProperties.has('_config') || changedProperties.has('_activeTab')) {
@@ -387,20 +412,28 @@ export class GasBuddyCard extends LitElement {
         <!-- Tab Switcher -->
         ${hasGas && hasEV
           ? html`
-              <div class="tabs" role="tablist">
+              <div class="tabs" role="tablist" aria-label="Service type">
                 <button
+                  id="gasbuddy-tab-gas"
                   class="tab ${currentTab === 'gas' ? 'active' : ''}"
                   role="tab"
                   aria-selected="${currentTab === 'gas' ? 'true' : 'false'}"
+                  aria-controls="gasbuddy-panel-gas"
+                  tabindex="${currentTab === 'gas' ? '0' : '-1'}"
                   @click=${() => (this._activeTab = 'gas')}
+                  @keydown=${this._onTabKeydown}
                 >
                   Gas Prices
                 </button>
                 <button
+                  id="gasbuddy-tab-ev"
                   class="tab ${currentTab === 'ev' ? 'active' : ''}"
                   role="tab"
                   aria-selected="${currentTab === 'ev' ? 'true' : 'false'}"
+                  aria-controls="gasbuddy-panel-ev"
+                  tabindex="${currentTab === 'ev' ? '0' : '-1'}"
                   @click=${() => (this._activeTab = 'ev')}
+                  @keydown=${this._onTabKeydown}
                 >
                   EV Chargers
                 </button>
@@ -409,9 +442,34 @@ export class GasBuddyCard extends LitElement {
           : ''}
 
         <!-- Tab Content -->
-        <div class="tab-content">
-          ${currentTab === 'gas' ? this._renderGasContent(entities) : this._renderEVContent(entities)}
-        </div>
+        ${hasGas && hasEV
+          ? html`
+              <div
+                id="gasbuddy-panel-gas"
+                class="tab-content"
+                role="tabpanel"
+                aria-labelledby="gasbuddy-tab-gas"
+                tabindex="0"
+                ?hidden=${currentTab !== 'gas'}
+              >
+                ${this._renderGasContent(entities)}
+              </div>
+              <div
+                id="gasbuddy-panel-ev"
+                class="tab-content"
+                role="tabpanel"
+                aria-labelledby="gasbuddy-tab-ev"
+                tabindex="0"
+                ?hidden=${currentTab !== 'ev'}
+              >
+                ${this._renderEVContent(entities)}
+              </div>
+            `
+          : html`
+              <div class="tab-content">
+                ${currentTab === 'gas' ? this._renderGasContent(entities) : this._renderEVContent(entities)}
+              </div>
+            `}
 
         <!-- Footer -->
         <div class="footer">
