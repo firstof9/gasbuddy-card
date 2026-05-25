@@ -346,3 +346,79 @@ export function getPaymentIcons(cardsString: string): TemplateResult[] {
   return icons;
 }
 
+export interface HistoryPoint {
+  s: string; // state
+  t: number; // timestamp in seconds
+}
+
+export interface SVGPathResult {
+  stroke: string;
+  fill: string;
+}
+
+/**
+ * Generates SVG path commands (stroke and fill) for a given history dataset.
+ * Fits coordinates into viewBox 0 0 100 50.
+ */
+export function generateSparklinePaths(
+  history: HistoryPoint[],
+  minY: number = 40,
+  maxY: number = 10,
+): SVGPathResult {
+  if (!history || history.length === 0) {
+    return { stroke: '', fill: '' };
+  }
+
+  // Parse points, filtering out non-numeric states
+  const points = history
+    .map((d) => ({
+      val: Number(d.s),
+      time: Number(d.t),
+    }))
+    .filter((d) => !isNaN(d.val) && !isNaN(d.time));
+
+  if (points.length === 0) {
+    return { stroke: '', fill: '' };
+  }
+
+  // If there's only 1 point, make a flat line spanning across
+  if (points.length === 1) {
+    const y = (minY + maxY) / 2;
+    return {
+      stroke: `M 0,${y} L 100,${y}`,
+      fill: `M 0,${y} L 100,${y} L 100,50 L 0,50 Z`,
+    };
+  }
+
+  // Find min and max time & val
+  const times = points.map((p) => p.time);
+  const minTime = Math.min(...times);
+  const maxTime = Math.max(...times);
+
+  const vals = points.map((p) => p.val);
+  const minVal = Math.min(...vals);
+  const maxVal = Math.max(...vals);
+
+  const timeDiff = maxTime - minTime || 1;
+  const valDiff = maxVal - minVal || 1;
+
+  // Map each point to coordinates [0, 100] for X and [minY, maxY] for Y
+  const coords = points.map((p) => {
+    const x = ((p.time - minTime) / timeDiff) * 100;
+    const y = minVal === maxVal
+      ? (minY + maxY) / 2
+      : minY - ((p.val - minVal) / valDiff) * (minY - maxY);
+    return { x, y };
+  });
+
+  const strokeSegments = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)},${c.y.toFixed(1)}`);
+  const stroke = strokeSegments.join(' ');
+
+  const firstX = coords[0].x.toFixed(1);
+  const lastX = coords[coords.length - 1].x.toFixed(1);
+  const fill = `${stroke} L ${lastX},50 L ${firstX},50 Z`;
+
+  return { stroke, fill };
+}
+
+

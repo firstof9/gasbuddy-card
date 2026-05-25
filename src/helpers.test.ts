@@ -6,6 +6,7 @@ import {
   formatTimestamp,
   getNetworkColor,
   getPaymentIcons,
+  generateSparklinePaths,
 } from './helpers.js';
 import type { HomeAssistant } from './types.js';
 
@@ -194,3 +195,51 @@ describe('getPaymentIcons', () => {
     expect(getPaymentIcons('cash check carrier_pigeon').length).toBe(0);
   });
 });
+
+describe('generateSparklinePaths', () => {
+  it('returns empty paths for empty or undefined history', () => {
+    expect(generateSparklinePaths([])).toEqual({ stroke: '', fill: '' });
+    expect(generateSparklinePaths(undefined as any)).toEqual({ stroke: '', fill: '' });
+  });
+
+  it('filters out non-numeric points', () => {
+    expect(generateSparklinePaths([
+      { s: 'unknown', t: 100 },
+      { s: 'unavailable', t: 200 }
+    ])).toEqual({ stroke: '', fill: '' });
+  });
+
+  it('renders a horizontal line for a single valid data point', () => {
+    expect(generateSparklinePaths([{ s: '3.50', t: 100 }])).toEqual({
+      stroke: 'M 0,25 L 100,25',
+      fill: 'M 0,25 L 100,25 L 100,50 L 0,50 Z',
+    });
+  });
+
+  it('renders a horizontal line when all points have the same value', () => {
+    expect(generateSparklinePaths([
+      { s: '3.50', t: 100 },
+      { s: '3.50', t: 200 },
+      { s: '3.50', t: 300 }
+    ])).toEqual({
+      stroke: 'M 0.0,25.0 L 50.0,25.0 L 100.0,25.0',
+      fill: 'M 0.0,25.0 L 50.0,25.0 L 100.0,25.0 L 100.0,50 L 0.0,50 Z',
+    });
+  });
+
+  it('scales multiple points correctly within the viewBox coordinates', () => {
+    const history = [
+      { s: '3.00', t: 1000 }, // min val
+      { s: '3.50', t: 2000 },
+      { s: '4.00', t: 3000 }  // max val
+    ];
+    // With default minY=40, maxY=10, Y range is 30.
+    // Time diff is 2000. X maps 1000->0, 2000->50, 3000->100.
+    // Price maps 3.00->40, 3.50->25, 4.00->10.
+    expect(generateSparklinePaths(history)).toEqual({
+      stroke: 'M 0.0,40.0 L 50.0,25.0 L 100.0,10.0',
+      fill: 'M 0.0,40.0 L 50.0,25.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+    });
+  });
+});
+
