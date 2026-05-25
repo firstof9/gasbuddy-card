@@ -20,16 +20,18 @@ categories:
     labels:
       - 'performance'
   - title: '📖 Documentation'
+    collapse-after: 1
     labels:
       - 'docs'
       - 'documentation'
   - title: '🧰 Maintenance'
+    collapse-after: 1
     labels:
       - 'chore'
       - 'refactor'
       - 'ci'
   - title: '📦 Dependencies'
-    collapse-after: 2
+    collapse-after: 1
     labels:
       - 'dependencies'
 
