@@ -1,82 +1,51 @@
 import { html, type TemplateResult } from 'lit';
 import type { HomeAssistant } from './types.js';
 
-/**
- * Resolves all GasBuddy entity IDs associated with a given device ID.
- */
-export function findDeviceEntities(hass: HomeAssistant, deviceId: string): Record<string, string> {
+// Suffix → config-key map. Module-scoped so it's allocated once, not per call.
+const ENTITY_SUFFIXES: ReadonlyArray<readonly [string, readonly string[]]> = [
+  ['regular_gas', ['_regular_gas']],
+  ['midgrade_gas', ['_midgrade_gas']],
+  ['premium_gas', ['_premium_gas']],
+  ['diesel', ['_diesel']],
+  ['regular_gas_cash', ['_regular_gas_cash']],
+  ['midgrade_gas_cash', ['_midgrade_gas_cash']],
+  ['premium_gas_cash', ['_premium_gas_cash']],
+  ['diesel_cash', ['_diesel_cash']],
+  ['e85', ['_e85']],
+  ['e85_cash', ['_e85_cash']],
+  ['e15', ['_unl88', '_e15_gas', '_e15']],
+  ['e15_cash', ['_unl88_cash', '_e15_gas_cash', '_e15_cash']],
+  ['last_updated', ['_last_updated']],
+  ['ev_level1', ['_ev_level_1_chargers', '_ev_level1']],
+  ['ev_level2', ['_ev_level_2_chargers', '_ev_level2']],
+  ['ev_dc_fast', ['_ev_dc_fast_chargers', '_ev_dc_fast']],
+  ['ev_j1772', ['_ev_j1772_connectors', '_ev_j1772']],
+  ['ev_j1772_power', ['_ev_j1772_connector_power', '_ev_j1772_power']],
+  ['ev_ccs', ['_ev_ccs_connectors', '_ev_ccs']],
+  ['ev_ccs_power', ['_ev_ccs_connector_power', '_ev_ccs_power']],
+  ['ev_chademo', ['_ev_chademo_connectors', '_ev_chademo']],
+  ['ev_chademo_power', ['_ev_chademo_connector_power', '_ev_chademo_power']],
+  ['ev_nacs', ['_ev_nacs_connectors', '_ev_nacs']],
+  ['ev_nacs_power', ['_ev_nacs_connector_power', '_ev_nacs_power']],
+  ['ev_status', ['_ev_station_status', '_ev_status']],
+  ['ev_network', ['_ev_charging_network', '_ev_network']],
+  ['ev_pricing', ['_ev_charging_pricing', '_ev_pricing']],
+  ['ev_access_hours', ['_ev_access_hours']],
+  ['ev_cards_accepted', ['_ev_payment_accepted', '_ev_cards_accepted']],
+  ['ev_date_last_confirmed', ['_ev_last_confirmed', '_ev_date_last_confirmed']],
+];
+
+function mapEntitiesBySuffix(entityIds: string[]): Record<string, string> {
   const mapped: Record<string, string> = {};
-  if (!hass || !deviceId) return mapped;
-
-  let deviceEntities: string[] = [];
-
-  // 1. Resolve from the Home Assistant frontend Entity Registry if available
-  if (hass.entities) {
-    deviceEntities = Object.values(hass.entities)
-      .filter((e) => e.device_id === deviceId)
-      .map((e) => e.entity_id);
-  }
-
-  // 2. Fallback: Search in hass.states for entities belonging to the gasbuddy integration
-  // that share the same station_id attribute (if available)
-  if (deviceEntities.length === 0) {
-    const allEntities = Object.keys(hass.states);
-    for (const entityId of allEntities) {
-      const stateObj = hass.states[entityId];
-      if (stateObj && stateObj.attributes && stateObj.attributes.station_id) {
-        // If the station_id attribute matches the deviceId (sometimes deviceId is the station_id)
-        if (String(stateObj.attributes.station_id) === String(deviceId)) {
-          deviceEntities.push(entityId);
-        }
-      }
-    }
-  }
-
-  // Suffix lists to map entity_ids to card config keys
-  const suffixes: Record<string, string[]> = {
-    regular_gas: ['_regular_gas'],
-    midgrade_gas: ['_midgrade_gas'],
-    premium_gas: ['_premium_gas'],
-    diesel: ['_diesel'],
-    regular_gas_cash: ['_regular_gas_cash'],
-    midgrade_gas_cash: ['_midgrade_gas_cash'],
-    premium_gas_cash: ['_premium_gas_cash'],
-    diesel_cash: ['_diesel_cash'],
-    e85: ['_e85'],
-    e85_cash: ['_e85_cash'],
-    e15: ['_unl88', '_e15_gas', '_e15'],
-    e15_cash: ['_unl88_cash', '_e15_gas_cash', '_e15_cash'],
-    last_updated: ['_last_updated'],
-
-    ev_level1: ['_ev_level_1_chargers', '_ev_level1'],
-    ev_level2: ['_ev_level_2_chargers', '_ev_level2'],
-    ev_dc_fast: ['_ev_dc_fast_chargers', '_ev_dc_fast'],
-    ev_j1772: ['_ev_j1772_connectors', '_ev_j1772'],
-    ev_j1772_power: ['_ev_j1772_connector_power', '_ev_j1772_power'],
-    ev_ccs: ['_ev_ccs_connectors', '_ev_ccs'],
-    ev_ccs_power: ['_ev_ccs_connector_power', '_ev_ccs_power'],
-    ev_chademo: ['_ev_chademo_connectors', '_ev_chademo'],
-    ev_chademo_power: ['_ev_chademo_connector_power', '_ev_chademo_power'],
-    ev_nacs: ['_ev_nacs_connectors', '_ev_nacs'],
-    ev_nacs_power: ['_ev_nacs_connector_power', '_ev_nacs_power'],
-    ev_status: ['_ev_station_status', '_ev_status'],
-    ev_network: ['_ev_charging_network', '_ev_network'],
-    ev_pricing: ['_ev_charging_pricing', '_ev_pricing'],
-    ev_access_hours: ['_ev_access_hours'],
-    ev_cards_accepted: ['_ev_payment_accepted', '_ev_cards_accepted'],
-    ev_date_last_confirmed: ['_ev_last_confirmed', '_ev_date_last_confirmed'],
-  };
-
-  for (const entityId of deviceEntities) {
-    const lowerEntityId = entityId.toLowerCase();
-    for (const [key, list] of Object.entries(suffixes)) {
-      if (list.some((s) => lowerEntityId.endsWith(s))) {
+  for (const entityId of entityIds) {
+    const lower = entityId.toLowerCase();
+    for (const [key, suffixes] of ENTITY_SUFFIXES) {
+      if (suffixes.some((s) => lower.endsWith(s))) {
         mapped[key] = entityId;
         break;
       }
     }
   }
-
   return mapped;
 }
 
@@ -124,6 +93,53 @@ export function getNetworkBrand(network?: string | null): NetworkBrand | null {
   const lower = String(network).toLowerCase();
   const match = NETWORK_BRANDS.find((entry) => lower.includes(entry.match));
   return match ? match.brand : null;
+}
+
+// Cache resolved entity sets keyed by the hass.entities registry object.
+// HA replaces the registry object when its contents change, which invalidates
+// the cache via WeakMap GC. Each registry version stores per-device results.
+const registryCache = new WeakMap<object, Map<string, Record<string, string>>>();
+
+/**
+ * Resolves all GasBuddy entity IDs associated with a given device ID.
+ * Results are memoized per hass.entities object so repeated calls within
+ * the same registry version (e.g. shouldUpdate + render in the same tick)
+ * don't re-scan the registry.
+ */
+export function findDeviceEntities(hass: HomeAssistant, deviceId: string): Record<string, string> {
+  if (!hass || !deviceId) return {};
+
+  // 1. Resolve from the Home Assistant frontend Entity Registry if available (cached).
+  if (hass.entities) {
+    let perDevice = registryCache.get(hass.entities);
+    if (!perDevice) {
+      perDevice = new Map();
+      registryCache.set(hass.entities, perDevice);
+    }
+    const cached = perDevice.get(deviceId);
+    if (cached) return cached;
+
+    const deviceEntities = Object.values(hass.entities)
+      .filter((e) => e.device_id === deviceId)
+      .map((e) => e.entity_id);
+
+    if (deviceEntities.length > 0) {
+      const mapped = mapEntitiesBySuffix(deviceEntities);
+      perDevice.set(deviceId, mapped);
+      return mapped;
+    }
+  }
+
+  // 2. Fallback: Search hass.states for entities sharing the same station_id
+  // attribute. Not cached because hass.states changes on every state update.
+  const stateEntities: string[] = [];
+  for (const entityId of Object.keys(hass.states)) {
+    const stateObj = hass.states[entityId];
+    if (stateObj?.attributes?.station_id && String(stateObj.attributes.station_id) === String(deviceId)) {
+      stateEntities.push(entityId);
+    }
+  }
+  return mapEntitiesBySuffix(stateEntities);
 }
 
 /**
