@@ -11,6 +11,7 @@ A modern, premium Home Assistant custom Lovelace card for displaying gas prices 
 ## Features
 
 - **Fuel Prices & EV Chargers:** Displays comprehensive gas station fuel prices and a dedicated EV view showing available chargers and connector types.
+- **Price Trend Graph:** Optional background sparkline behind each fuel grade, sourced from Home Assistant's recorder history so you can see whether prices are trending up or down.
 - **Station Address:** Automatically discovers and displays the station address and coordinates.
 - **EV Payment Options:** Shows accepted payment methods for EV charging using recognizable credit and debit card logos.
 - **Last Confirmed Status:** Clearly shows the time elapsed since the last price or charger status confirmation.
@@ -64,7 +65,27 @@ type: custom:gasbuddy-card
 device_id: 32_character_device_registry_id_from_hacs_gasbuddy
 default_mode: gas             # Optional: 'gas' or 'ev' (defaults to 'gas')
 title: "My Local Station"     # Optional: Custom card title override
+show_trend: true              # Optional: render a background price-history sparkline behind each fuel grade (defaults to false)
+trend_hours: 168              # Optional: how many hours of history to plot (defaults to 168 = 7 days; clamped 1-720)
 ```
+
+### Price trend graph
+
+When `show_trend: true` the card fetches recent state history for each
+visible fuel-grade sensor and renders a thin sparkline as the background
+of each price tile. The default window is **7 days (168 hours)**; the
+visual editor exposes a number field that accepts 1–720 hours (30 days).
+
+Notes:
+
+- History is fetched at most once every 10 minutes per card instance, so
+  enabling it does not put meaningful load on the recorder.
+- The sparkline uses Home Assistant's accent color and stays purely
+  decorative — current price text always renders on top.
+- If a sensor has fewer than two recorded values in the requested window
+  (e.g. it was just added), the card simply omits its sparkline.
+- Requires the Home Assistant `recorder` integration to be enabled for
+  the configured GasBuddy sensors. (`recorder` is on by default in HA.)
 
 ## Advanced configuration
 
@@ -100,6 +121,9 @@ ev_cards_accepted_entity: sensor.other_ev_payment_methods
 | `type` | string | **Required** | Must be `custom:gasbuddy-card`. |
 | `device_id` | string | **Required** | The device registry ID of the GasBuddy station. |
 | `title` | string | Optional | Custom title header of the card. |
+| `default_mode` | `"gas"` \| `"ev"` | `"gas"` | Which tab the card opens on when both gas and EV data are present. |
+| `show_trend` | boolean | `false` | Render a background price-history sparkline behind each fuel grade. |
+| `trend_hours` | number | `168` | Hours of history to plot when `show_trend` is on. Range 1–720. |
 | `<fuel_type>_entity` | string | Auto-discovered | Manual override for specific fuel price sensors. |
 | `<ev_sensor>_entity` | string | Auto-discovered | Manual override for specific EV charger status/connector sensors. |
 
