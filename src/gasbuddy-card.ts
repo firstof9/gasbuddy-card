@@ -43,6 +43,11 @@ const GAS_AVAILABILITY_KEYS: EntityKey[] = [
   'e15', 'e15_cash', 'e85', 'e85_cash',
 ];
 
+// Entities whose history we fetch for the background-trend graph. Same
+// set as GAS_AVAILABILITY_KEYS today; kept separate so trend coverage
+// can change independently of which keys count toward "has gas".
+const GAS_TREND_KEYS: EntityKey[] = GAS_AVAILABILITY_KEYS;
+
 const EV_AVAILABILITY_KEYS: EntityKey[] = [
   'ev_level1', 'ev_level2', 'ev_dc_fast',
   'ev_j1772', 'ev_ccs', 'ev_chademo', 'ev_nacs', 'ev_network',
@@ -173,25 +178,13 @@ export class GasBuddyCard extends LitElement {
       this._historyData = {};
     }
 
-    const discovered = findDeviceEntities(this.hass, deviceId);
-    const entities = {
-      regular_gas: this._config.regular_gas_entity || discovered.regular_gas,
-      midgrade_gas: this._config.midgrade_gas_entity || discovered.midgrade_gas,
-      premium_gas: this._config.premium_gas_entity || discovered.premium_gas,
-      diesel: this._config.diesel_entity || discovered.diesel,
-      regular_gas_cash: this._config.regular_gas_cash_entity || discovered.regular_gas_cash,
-      midgrade_gas_cash: this._config.midgrade_gas_cash_entity || discovered.midgrade_gas_cash,
-      premium_gas_cash: this._config.premium_gas_cash_entity || discovered.premium_gas_cash,
-      diesel_cash: this._config.diesel_cash_entity || discovered.diesel_cash,
-      e85: this._config.e85_entity || discovered.e85,
-      e85_cash: this._config.e85_cash_entity || discovered.e85_cash,
-      e15: this._config.e15_entity || discovered.e15,
-      e15_cash: this._config.e15_cash_entity || discovered.e15_cash,
-    };
-
-    const entityIds = Object.values(entities).filter(
-      (eid) => eid && this.hass!.states[eid]
-    ) as string[];
+    // Reuse the canonical resolver so trend coverage always tracks the
+    // ENTITY_KEYS / config-override surface that the rest of the card
+    // consumes. Avoids drift between this list and the rest of the card.
+    const entities = this._resolveEntities(deviceId);
+    const entityIds = GAS_TREND_KEYS.map((k) => entities[k]).filter(
+      (eid): eid is string => !!eid && !!this.hass!.states[eid],
+    );
 
     if (entityIds.length === 0) return;
 
