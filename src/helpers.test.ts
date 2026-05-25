@@ -245,5 +245,18 @@ describe('generateSparklinePaths', () => {
       fill: 'M 0.0,40.0 L 50.0,25.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
     });
   });
+
+  it('supports standard state and ISO last_updated timestamps', () => {
+    const history = [
+      { state: '3.00', last_updated: '2026-05-24T20:00:00.000Z' },
+      { state: '4.00', last_updated: '2026-05-24T21:00:00.000Z' }
+    ];
+    // 2026-05-24T20:00:00.000Z parsed to epoch seconds: 1779652800
+    // 2026-05-24T21:00:00.000Z parsed to epoch seconds: 1779656400
+    expect(generateSparklinePaths(history)).toEqual({
+      stroke: 'M 0.0,40.0 L 100.0,10.0',
+      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+    });
+  });
 });
 

@@ -351,8 +351,11 @@ export function getPaymentIcons(cardsString: string): TemplateResult[] {
 }
 
 export interface HistoryPoint {
-  s: string; // state
-  t: number; // timestamp in seconds
+  s?: string;
+  t?: number;
+  state?: string;
+  last_updated?: string | number;
+  last_changed?: string | number;
 }
 
 export interface SVGPathResult {
@@ -373,12 +376,27 @@ export function generateSparklinePaths(
     return { stroke: '', fill: '' };
   }
 
-  // Parse points, filtering out non-numeric states
+  // Parse points, filtering out non-numeric states, supporting both shorthand and standard keys
   const points = history
-    .map((d) => ({
-      val: Number(d.s),
-      time: Number(d.t),
-    }))
+    .map((d) => {
+      const stateStr = d.s !== undefined ? d.s : d.state;
+      const rawTime = d.t !== undefined ? d.t : (d.last_updated !== undefined ? d.last_updated : d.last_changed);
+
+      const val = Number(stateStr);
+      let time = NaN;
+      if (typeof rawTime === 'number') {
+        time = rawTime;
+      } else if (typeof rawTime === 'string') {
+        const parsedNum = Number(rawTime);
+        if (!isNaN(parsedNum)) {
+          time = parsedNum;
+        } else {
+          time = Date.parse(rawTime) / 1000;
+        }
+      }
+
+      return { val, time };
+    })
     .filter((d) => !isNaN(d.val) && !isNaN(d.time));
 
   if (points.length === 0) {
