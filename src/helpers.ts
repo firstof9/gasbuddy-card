@@ -1,211 +1,242 @@
 import { html, type TemplateResult } from 'lit';
 import type { HomeAssistant } from './types.js';
 
-/**
- * Resolves all GasBuddy entity IDs associated with a given device ID.
- */
-export function findDeviceEntities(hass: HomeAssistant, deviceId: string): Record<string, string> {
+// Suffix → config-key map. Module-scoped so it's allocated once, not per call.
+const ENTITY_SUFFIXES: ReadonlyArray<readonly [string, readonly string[]]> = [
+  ['regular_gas', ['_regular_gas']],
+  ['midgrade_gas', ['_midgrade_gas']],
+  ['premium_gas', ['_premium_gas']],
+  ['diesel', ['_diesel']],
+  ['regular_gas_cash', ['_regular_gas_cash']],
+  ['midgrade_gas_cash', ['_midgrade_gas_cash']],
+  ['premium_gas_cash', ['_premium_gas_cash']],
+  ['diesel_cash', ['_diesel_cash']],
+  ['e85', ['_e85']],
+  ['e85_cash', ['_e85_cash']],
+  ['e15', ['_unl88', '_e15_gas', '_e15']],
+  ['e15_cash', ['_unl88_cash', '_e15_gas_cash', '_e15_cash']],
+  ['last_updated', ['_last_updated']],
+  ['ev_level1', ['_ev_level_1_chargers', '_ev_level1']],
+  ['ev_level2', ['_ev_level_2_chargers', '_ev_level2']],
+  ['ev_dc_fast', ['_ev_dc_fast_chargers', '_ev_dc_fast']],
+  ['ev_j1772', ['_ev_j1772_connectors', '_ev_j1772']],
+  ['ev_j1772_power', ['_ev_j1772_connector_power', '_ev_j1772_power']],
+  ['ev_ccs', ['_ev_ccs_connectors', '_ev_ccs']],
+  ['ev_ccs_power', ['_ev_ccs_connector_power', '_ev_ccs_power']],
+  ['ev_chademo', ['_ev_chademo_connectors', '_ev_chademo']],
+  ['ev_chademo_power', ['_ev_chademo_connector_power', '_ev_chademo_power']],
+  ['ev_nacs', ['_ev_nacs_connectors', '_ev_nacs']],
+  ['ev_nacs_power', ['_ev_nacs_connector_power', '_ev_nacs_power']],
+  ['ev_status', ['_ev_station_status', '_ev_status']],
+  ['ev_network', ['_ev_charging_network', '_ev_network']],
+  ['ev_pricing', ['_ev_charging_pricing', '_ev_pricing']],
+  ['ev_access_hours', ['_ev_access_hours']],
+  ['ev_cards_accepted', ['_ev_payment_accepted', '_ev_cards_accepted']],
+  ['ev_date_last_confirmed', ['_ev_last_confirmed', '_ev_date_last_confirmed']],
+];
+
+function mapEntitiesBySuffix(entityIds: string[]): Record<string, string> {
   const mapped: Record<string, string> = {};
-  if (!hass || !deviceId) return mapped;
-
-  let deviceEntities: string[] = [];
-
-  // 1. Resolve from the Home Assistant frontend Entity Registry if available
-  if (hass.entities) {
-    deviceEntities = Object.values(hass.entities)
-      .filter((e) => e.device_id === deviceId)
-      .map((e) => e.entity_id);
-  }
-
-  // 2. Fallback: Search in hass.states for entities belonging to the gasbuddy integration
-  // that share the same station_id attribute (if available)
-  if (deviceEntities.length === 0) {
-    const allEntities = Object.keys(hass.states);
-    for (const entityId of allEntities) {
-      const stateObj = hass.states[entityId];
-      if (stateObj && stateObj.attributes && stateObj.attributes.station_id) {
-        // If the station_id attribute matches the deviceId (sometimes deviceId is the station_id)
-        if (String(stateObj.attributes.station_id) === String(deviceId)) {
-          deviceEntities.push(entityId);
-        }
-      }
-    }
-  }
-
-  // Suffix lists to map entity_ids to card config keys
-  const suffixes: Record<string, string[]> = {
-    regular_gas: ['_regular_gas'],
-    midgrade_gas: ['_midgrade_gas'],
-    premium_gas: ['_premium_gas'],
-    diesel: ['_diesel'],
-    regular_gas_cash: ['_regular_gas_cash'],
-    midgrade_gas_cash: ['_midgrade_gas_cash'],
-    premium_gas_cash: ['_premium_gas_cash'],
-    diesel_cash: ['_diesel_cash'],
-    e85: ['_e85'],
-    e85_cash: ['_e85_cash'],
-    e15: ['_unl88', '_e15_gas', '_e15'],
-    e15_cash: ['_unl88_cash', '_e15_gas_cash', '_e15_cash'],
-    last_updated: ['_last_updated'],
-
-    ev_level1: ['_ev_level_1_chargers', '_ev_level1'],
-    ev_level2: ['_ev_level_2_chargers', '_ev_level2'],
-    ev_dc_fast: ['_ev_dc_fast_chargers', '_ev_dc_fast'],
-    ev_j1772: ['_ev_j1772_connectors', '_ev_j1772'],
-    ev_j1772_power: ['_ev_j1772_connector_power', '_ev_j1772_power'],
-    ev_ccs: ['_ev_ccs_connectors', '_ev_ccs'],
-    ev_ccs_power: ['_ev_ccs_connector_power', '_ev_ccs_power'],
-    ev_chademo: ['_ev_chademo_connectors', '_ev_chademo'],
-    ev_chademo_power: ['_ev_chademo_connector_power', '_ev_chademo_power'],
-    ev_nacs: ['_ev_nacs_connectors', '_ev_nacs'],
-    ev_nacs_power: ['_ev_nacs_connector_power', '_ev_nacs_power'],
-    ev_status: ['_ev_station_status', '_ev_status'],
-    ev_network: ['_ev_charging_network', '_ev_network'],
-    ev_pricing: ['_ev_charging_pricing', '_ev_pricing'],
-    ev_access_hours: ['_ev_access_hours'],
-    ev_cards_accepted: ['_ev_payment_accepted', '_ev_cards_accepted'],
-    ev_date_last_confirmed: ['_ev_last_confirmed', '_ev_date_last_confirmed'],
-  };
-
-  for (const entityId of deviceEntities) {
-    const lowerEntityId = entityId.toLowerCase();
-    for (const [key, list] of Object.entries(suffixes)) {
-      if (list.some((s) => lowerEntityId.endsWith(s))) {
+  for (const entityId of entityIds) {
+    const lower = entityId.toLowerCase();
+    for (const [key, suffixes] of ENTITY_SUFFIXES) {
+      if (suffixes.some((s) => lower.endsWith(s))) {
         mapped[key] = entityId;
         break;
       }
     }
   }
-
   return mapped;
+}
+
+interface NetworkBrand {
+  name: string;
+  color: string;
+  // SVG path data (24x24 viewBox). Brands without a CC0 vector mark omit this
+  // and render as a colored text pill instead.
+  svgPath?: string;
+}
+
+// First substring match wins, so order matters for ambiguous names.
+const NETWORK_BRANDS: ReadonlyArray<{ match: string; brand: NetworkBrand }> = [
+  {
+    match: 'tesla',
+    brand: {
+      name: 'Tesla',
+      color: '#cc0000',
+      // Simple Icons "Tesla" — CC0 1.0 — https://simpleicons.org/icons/tesla
+      svgPath:
+        'M12 5.362l2.475-3.026s4.245.09 8.471 2.054c-1.082 1.636-3.231 2.438-3.231 2.438-.146-1.439-1.154-1.79-4.354-1.79L12 24 8.619 5.034c-3.18 0-4.188.354-4.335 1.792 0 0-2.146-.795-3.229-2.43C5.28 2.431 9.525 2.34 9.525 2.34L12 5.362l-.004.002H12v-.002zm0-3.899c3.415-.03 7.326.528 11.328 2.28.535-.968.672-1.395.672-1.395C19.625.612 15.528.015 12 0 8.472.015 4.375.61 0 2.349c0 0 .195.525.672 1.396C4.674 1.989 8.585 1.435 12 1.46v.003z',
+    },
+  },
+  {
+    match: 'shell',
+    brand: {
+      name: 'Shell',
+      color: '#fbce07',
+      // Simple Icons "Shell" — CC0 1.0 — https://simpleicons.org/icons/shell
+      svgPath:
+        'M12 .863C5.34.863 0 6.251 0 12.98c0 .996.038 1.374.246 2.33l3.662 2.71.57 4.515h6.102l.326.227c.377.262.705.375 1.082.375.352 0 .732-.101 1.024-.313l.39-.289h6.094l.563-4.515 3.695-2.71c.208-.956.246-1.334.246-2.33C24 6.252 18.661.863 12 .863zm.996 2.258c.9 0 1.778.224 2.512.649l-2.465 12.548 3.42-12.062c1.059.36 1.863.941 2.508 1.814l.025.034-4.902 10.615 5.572-9.713.033.03c.758.708 1.247 1.567 1.492 2.648l-6.195 7.666 6.436-6.5.01.021c.253.563.417 1.36.417 1.996 0 .509-.024.712-.164 1.25l-3.554 2.602-.467 3.71h-4.475l-.517.395c-.199.158-.482.266-.682.266-.199 0-.483-.108-.682-.266l-.517-.394H6.322l-.445-3.61-3.627-2.666c-.11-.436-.16-.83-.16-1.261 0-.72.159-1.49.426-2.053l.013-.024 6.45 6.551L2.75 9.621c.25-1.063.874-2.09 1.64-2.713l5.542 9.776L4.979 6.1c.555-.814 1.45-1.455 2.546-1.827l3.424 12.069L8.355 3.816l.055-.03c.814-.45 1.598-.657 2.457-.657.195 0 .286.004.528.03l.587 13.05.46-13.059c.224-.025.309-.029.554-.029z',
+    },
+  },
+  // Brands below have no CC0 vector mark we can ship, so they render as
+  // colored text pills in their canonical brand color.
+  { match: 'electrify america', brand: { name: 'Electrify America', color: '#00a261' } },
+  { match: 'chargepoint', brand: { name: 'ChargePoint', color: '#40b83c' } },
+  { match: 'evgo', brand: { name: 'EVgo', color: '#0055ff' } },
+  { match: 'blink', brand: { name: 'Blink', color: '#0066cc' } },
+  { match: 'flo', brand: { name: 'FLO', color: '#1c85c8' } },
+];
+
+export function getNetworkBrand(network?: string | null): NetworkBrand | null {
+  if (!network) return null;
+  const lower = String(network).toLowerCase();
+  const match = NETWORK_BRANDS.find((entry) => lower.includes(entry.match));
+  return match ? match.brand : null;
+}
+
+// Cache resolved entity sets keyed by the hass.entities registry object.
+// HA replaces the registry object when its contents change, which invalidates
+// the cache via WeakMap GC. Each registry version stores per-device results.
+const registryCache = new WeakMap<object, Map<string, Record<string, string>>>();
+
+/**
+ * Resolves all GasBuddy entity IDs associated with a given device ID.
+ * Results are memoized per hass.entities object so repeated calls within
+ * the same registry version (e.g. shouldUpdate + render in the same tick)
+ * don't re-scan the registry.
+ */
+export function findDeviceEntities(hass: HomeAssistant, deviceId: string): Record<string, string> {
+  if (!hass || !deviceId) return {};
+
+  // 1. Resolve from the Home Assistant frontend Entity Registry if available (cached).
+  if (hass.entities) {
+    let perDevice = registryCache.get(hass.entities);
+    if (!perDevice) {
+      perDevice = new Map();
+      registryCache.set(hass.entities, perDevice);
+    }
+    const cached = perDevice.get(deviceId);
+    if (cached) return cached;
+
+    const deviceEntities = Object.values(hass.entities)
+      .filter((e) => e.device_id === deviceId)
+      .map((e) => e.entity_id);
+
+    if (deviceEntities.length > 0) {
+      const mapped = mapEntitiesBySuffix(deviceEntities);
+      perDevice.set(deviceId, mapped);
+      return mapped;
+    }
+  }
+
+  // 2. Fallback: Search hass.states for entities sharing the same station_id
+  // attribute. Not cached because hass.states changes on every state update.
+  const stateEntities: string[] = [];
+  for (const entityId of Object.keys(hass.states)) {
+    const stateObj = hass.states[entityId];
+    if (stateObj?.attributes?.station_id && String(stateObj.attributes.station_id) === String(deviceId)) {
+      stateEntities.push(entityId);
+    }
+  }
+  return mapEntitiesBySuffix(stateEntities);
 }
 
 /**
  * Returns a color associated with an EV charging network.
  */
 export function getNetworkColor(network: string): string {
-  if (!network) return 'var(--primary-color)';
-  const net = network.toLowerCase();
-  if (net.includes('tesla')) return '#cc0000';
-  if (net.includes('chargepoint')) return '#40b83c';
-  if (net.includes('evgo')) return '#0055ff';
-  if (net.includes('electrify america')) return '#00a261';
-  if (net.includes('blink')) return '#0066cc';
-  if (net.includes('flo')) return '#1c85c8';
-  if (net.includes('shell')) return '#fcd116';
-  return 'var(--primary-color)';
+  return getNetworkBrand(network)?.color ?? 'var(--primary-color)';
 }
 
 /**
- * Returns an inline SVG brand logo for the EV network.
+ * Returns a logo for an EV network. Tesla and Shell render as their
+ * official CC0 vector marks (Simple Icons); other known networks render
+ * as a colored text pill in the brand color; unknown networks fall back
+ * to the generic ev-station icon.
  */
 export function getNetworkLogo(network: string): TemplateResult {
-  if (!network) return html`<ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>`;
-  const net = network.toLowerCase();
-
-  // Tesla SVG Red T Logo
-  if (net.includes('tesla')) {
+  const brand = getNetworkBrand(network);
+  if (!brand) {
+    return html`<ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>`;
+  }
+  if (brand.svgPath) {
     return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #cc0000;" role="img" aria-label="Tesla Network">
-        <path d="M12,2C11.5,2 10,4.8 9.8,5.7C10.7,5.5 11.5,5.4 12,5.4C12.5,5.4 13.3,5.5 14.2,5.7C14,4.8 12.5,2 12,2M12,6.8C10.5,6.8 8.8,7.3 7,8.2C6.9,8.5 6.8,8.8 6.8,9C8.3,8.2 10.3,7.8 12,7.8C13.7,7.8 15.7,8.2 17.2,9C17.2,8.8 17.1,8.5 17,8.2C15.2,7.3 13.5,6.8 12,6.8M7.2,10.2C7.1,10.5 7,10.9 7,11.2C8.7,10.5 10.5,10.2 12,10.2C13.5,10.2 15.3,10.5 17,11.2C17,10.9 16.9,10.5 16.8,10.2C15.2,9.6 13.5,9.2 12,9.2C10.5,9.2 8.8,9.6 7.2,10.2M12,11.5C10.2,11.5 8.2,12 6.5,12.8C6.5,13.2 6.5,13.5 6.5,13.8C8,12.8 10.2,12.4 12,12.4C13.8,12.4 16,12.8 17.5,13.8C17.5,13.5 17.5,13.2 17.5,12.8C15.8,12 13.8,11.5 12,11.5M12,14.5C10.8,14.5 9.5,14.7 8.2,15.1L8.2,22C8.2,22 12,21.5 12,20.5L12,15.5C12,15.5 12,14.5 12,14.5Z"/>
+      <svg
+        class="network-svg"
+        viewBox="0 0 24 24"
+        role="img"
+        aria-label="${brand.name}"
+        style="fill: ${brand.color}"
+      >
+        <title>${brand.name}</title>
+        <path d="${brand.svgPath}" />
       </svg>
     `;
   }
+  return html`
+    <span class="network-pill" style="background: ${brand.color}" role="img" aria-label="${brand.name}">
+      ${brand.name}
+    </span>
+  `;
+}
 
-  // ChargePoint Style SVG (Green C shape logo)
-  if (net.includes('chargepoint')) {
-    return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #40b83c;" role="img" aria-label="ChargePoint Network">
-        <circle cx="12" cy="12" r="10" fill="none" stroke="#40b83c" stroke-width="2.5"/>
-        <path d="M14.5,8.5 C13.5,7.5 12,7 10.5,7 C8,7 6,9 6,11.5 C6,14 8,16 10.5,16 C12,16 13.5,15.5 14.5,14.5" fill="none" stroke="#40b83c" stroke-width="3" stroke-linecap="round"/>
-        <circle cx="15" cy="11.5" r="1.5"/>
-      </svg>
-    `;
-  }
+// Currencies the gasbuddy integration may report. Anything else falls back to USD.
+const KNOWN_CURRENCIES = new Set(['USD', 'CAD', 'EUR', 'GBP', 'AUD', 'MXN', 'JPY']);
 
-  // EVgo style SVG (Glowing Blue/Orange)
-  if (net.includes('evgo')) {
-    return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #0055ff;" role="img" aria-label="EVgo Network">
-        <path d="M2,10 L8,10 L5,22 L14,12 L9,12 L12,2 Z" />
-        <text x="14" y="21" font-size="7" font-weight="900" fill="#0055ff">go</text>
-      </svg>
-    `;
-  }
-
-  // Electrify America (Green EA)
-  if (net.includes('electrify america')) {
-    return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #00a261;" role="img" aria-label="Electrify America Network">
-        <rect x="2" y="2" width="20" height="20" rx="4" fill="none" stroke="#00a261" stroke-width="2"/>
-        <path d="M6,17 L10,7 L14,17 M7.5,13.5 L12.5,13.5" fill="none" stroke="#00a261" stroke-width="2"/>
-        <path d="M15,7 L19,7 M15,12 L18,12 M15,17 L19,17" fill="none" stroke="#00a261" stroke-width="2"/>
-      </svg>
-    `;
-  }
-
-  // Blink (Lighting Bolt logo)
-  if (net.includes('blink')) {
-    return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #0066cc;" role="img" aria-label="Blink Network">
-        <circle cx="12" cy="12" r="10" fill="none" stroke="#0066cc" stroke-width="2"/>
-        <path d="M11,4 L16,11 L13,11 L15,18 L9,11 L12,11 Z" />
-      </svg>
-    `;
-  }
-
-  // Flo (Waves/Lines logo)
-  if (net.includes('flo')) {
-    return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #1c85c8;" role="img" aria-label="FLO Network">
-        <path d="M4,12 C4,7.5 7.5,4 12,4 C16.5,4 20,7.5 20,12 C20,16.5 16.5,20 12,20" fill="none" stroke="#1c85c8" stroke-width="2"/>
-        <path d="M8,12 C8,9.8 9.8,8 12,8 C14.2,8 16,9.8 16,12" fill="none" stroke="#1c85c8" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    `;
-  }
-
-  // Shell Recharge (Yellow Shell representation)
-  if (net.includes('shell')) {
-    return html`
-      <svg viewBox="0 0 24 24" width="28" height="28" style="fill: #fcd116;" role="img" aria-label="Shell Recharge Network">
-        <path d="M12,2 A10,10 0 0,0 2,12 A10,10 0 0,0 12,22 A10,10 0 0,0 22,12 A10,10 0 0,0 12,2 M12,4 C15.5,4 18,6.5 18,10 C18,14.5 12,20 12,20 C12,20 6,14.5 6,10 C6,6.5 8.5,4 12,4 Z" />
-        <circle cx="12" cy="10" r="3" fill="#d00000"/>
-      </svg>
-    `;
-  }
-
-  return html`<ha-icon icon="mdi:ev-station" aria-hidden="true"></ha-icon>`;
+/**
+ * Parses a leading ISO-4217 currency code out of a unit_of_measurement
+ * like "USD/gallon" or "CAD/liter". Returns null when none is recognized.
+ */
+export function parseCurrency(unitOfMeasurement?: string | null): string | null {
+  if (!unitOfMeasurement) return null;
+  const code = unitOfMeasurement.trim().slice(0, 3).toUpperCase();
+  return KNOWN_CURRENCIES.has(code) ? code : null;
 }
 
 /**
- * Formats a fuel price.
+ * Formats a fuel price. Derives the currency from the sensor's
+ * unit_of_measurement so non-USD users render correctly; defaults to USD.
  */
-export function formatPrice(price: unknown): string {
+export function formatPrice(price: unknown, unitOfMeasurement?: string | null): string {
   if (price === undefined || price === null || price === 'unknown' || price === 'unavailable') {
     return '-';
   }
   const val = Number(price);
   if (isNaN(val)) return String(price);
 
-  // Return formatted price (e.g. $3.45)
+  const currency = parseCurrency(unitOfMeasurement) ?? 'USD';
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
-    currency: 'USD',
+    currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 3,
   }).format(val);
 }
 
 /**
- * Formats a distance value.
+ * Formats a distance value. The gasbuddy integration always reports miles
+ * via the `distance_miles` attribute, so we convert to km when the user's
+ * HA unit system is metric.
  */
-export function formatDistance(distance: unknown): string {
-  if (distance === undefined || distance === null || distance === 'unknown' || distance === 'unavailable') {
+export function formatDistance(distanceMiles: unknown, hass?: HomeAssistant): string {
+  if (
+    distanceMiles === undefined ||
+    distanceMiles === null ||
+    distanceMiles === 'unknown' ||
+    distanceMiles === 'unavailable'
+  ) {
     return '';
   }
-  const val = Number(distance);
-  if (isNaN(val)) return String(distance);
-  return `${val.toFixed(1)} mi`;
+  const miles = Number(distanceMiles);
+  if (isNaN(miles)) return String(distanceMiles);
+
+  const lengthUnit = hass?.config?.unit_system?.length;
+  if (lengthUnit === 'km') {
+    const km = miles * 1.609344;
+    return `${km.toFixed(1)} km`;
+  }
+  return `${miles.toFixed(1)} mi`;
 }
 
 /**
@@ -282,7 +313,7 @@ export function getPaymentIcons(cardsString: string): TemplateResult[] {
     ) {
       icons.push(html`
         <svg viewBox="0 0 36 24" width="36" height="24" class="payment-card-icon" title="American Express" role="img" aria-label="American Express accepted">
-          <rect width="36" height="24" rx="3" fill="#0070CD"/>
+          <rect width="36" height="24" rx="3" fill="#006FCF"/>
           <text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-weight="900" font-size="9" letter-spacing="0.5">AMEX</text>
         </svg>
       `);
@@ -318,4 +349,80 @@ export function getPaymentIcons(cardsString: string): TemplateResult[] {
 
   return icons;
 }
+
+export interface HistoryPoint {
+  s: string; // state
+  t: number; // timestamp in seconds
+}
+
+export interface SVGPathResult {
+  stroke: string;
+  fill: string;
+}
+
+/**
+ * Generates SVG path commands (stroke and fill) for a given history dataset.
+ * Fits coordinates into viewBox 0 0 100 50.
+ */
+export function generateSparklinePaths(
+  history: HistoryPoint[],
+  minY: number = 40,
+  maxY: number = 10,
+): SVGPathResult {
+  if (!history || history.length === 0) {
+    return { stroke: '', fill: '' };
+  }
+
+  // Parse points, filtering out non-numeric states
+  const points = history
+    .map((d) => ({
+      val: Number(d.s),
+      time: Number(d.t),
+    }))
+    .filter((d) => !isNaN(d.val) && !isNaN(d.time));
+
+  if (points.length === 0) {
+    return { stroke: '', fill: '' };
+  }
+
+  // If there's only 1 point, make a flat line spanning across
+  if (points.length === 1) {
+    const y = (minY + maxY) / 2;
+    return {
+      stroke: `M 0,${y} L 100,${y}`,
+      fill: `M 0,${y} L 100,${y} L 100,50 L 0,50 Z`,
+    };
+  }
+
+  // Find min and max time & val
+  const times = points.map((p) => p.time);
+  const minTime = Math.min(...times);
+  const maxTime = Math.max(...times);
+
+  const vals = points.map((p) => p.val);
+  const minVal = Math.min(...vals);
+  const maxVal = Math.max(...vals);
+
+  const timeDiff = maxTime - minTime || 1;
+  const valDiff = maxVal - minVal || 1;
+
+  // Map each point to coordinates [0, 100] for X and [minY, maxY] for Y
+  const coords = points.map((p) => {
+    const x = ((p.time - minTime) / timeDiff) * 100;
+    const y = minVal === maxVal
+      ? (minY + maxY) / 2
+      : minY - ((p.val - minVal) / valDiff) * (minY - maxY);
+    return { x, y };
+  });
+
+  const strokeSegments = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)},${c.y.toFixed(1)}`);
+  const stroke = strokeSegments.join(' ');
+
+  const firstX = coords[0].x.toFixed(1);
+  const lastX = coords[coords.length - 1].x.toFixed(1);
+  const fill = `${stroke} L ${lastX},50 L ${firstX},50 Z`;
+
+  return { stroke, fill };
+}
+
 

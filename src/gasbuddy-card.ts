@@ -10,6 +10,8 @@ import {
   formatPrice,
   formatDistance,
   formatTimestamp,
+  generateSparklinePaths,
+  type HistoryPoint,
 } from './helpers.js';
 
 // Register the custom element editor
@@ -20,6 +22,12 @@ export class GasBuddyCard extends LitElement {
   @property({ attribute: false }) public hass?: HomeAssistant;
   @state() private _config?: GasBuddyCardConfig;
   @state() private _activeTab: 'gas' | 'ev' = 'gas';
+  @state() private _historyData: Record<string, HistoryPoint[]> = {};
+  private _lastHistoryFetch?: number;
+
+  // Set when a keyboard-driven tab switch needs to move focus to the
+  // newly-active tab after the next render. Not a reactive @state.
+  private _moveFocusToActiveTab = false;
 
   public static override styles = cardStyles;
 
@@ -36,6 +44,98 @@ export class GasBuddyCard extends LitElement {
   public getCardSize(): number {
     return 4;
   }
+
+  protected override updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+
+    if (this._moveFocusToActiveTab) {
+      this._moveFocusToActiveTab = false;
+      const active = this.renderRoot.querySelector<HTMLElement>('.tab.active');
+      active?.focus();
+    }
+
+    if (!this._config?.show_trend) {
+      return;
+    }
+
+    const shouldFetch =
+      changedProperties.has('_config') ||
+      (changedProperties.has('hass') &&
+        (!this._lastHistoryFetch || Date.now() - this._lastHistoryFetch > 10 * 60 * 1000));
+
+    if (shouldFetch) {
+      this._fetchHistory();
+    }
+  }
+
+  private async _fetchHistory(): Promise<void> {
+    if (!this.hass || !this._config || !this._config.show_trend) {
+      return;
+    }
+
+    const deviceId = this._config.device_id;
+    if (!deviceId) return;
+
+    const discovered = findDeviceEntities(this.hass, deviceId);
+    const entities = {
+      regular_gas: this._config.regular_gas_entity || discovered.regular_gas,
+      midgrade_gas: this._config.midgrade_gas_entity || discovered.midgrade_gas,
+      premium_gas: this._config.premium_gas_entity || discovered.premium_gas,
+      diesel: this._config.diesel_entity || discovered.diesel,
+      regular_gas_cash: this._config.regular_gas_cash_entity || discovered.regular_gas_cash,
+      midgrade_gas_cash: this._config.midgrade_gas_cash_entity || discovered.midgrade_gas_cash,
+      premium_gas_cash: this._config.premium_gas_cash_entity || discovered.premium_gas_cash,
+      diesel_cash: this._config.diesel_cash_entity || discovered.diesel_cash,
+      e85: this._config.e85_entity || discovered.e85,
+      e85_cash: this._config.e85_cash_entity || discovered.e85_cash,
+      e15: this._config.e15_entity || discovered.e15,
+      e15_cash: this._config.e15_cash_entity || discovered.e15_cash,
+    };
+
+    const entityIds = Object.values(entities).filter(
+      (eid) => eid && this.hass!.states[eid]
+    ) as string[];
+
+    if (entityIds.length === 0) return;
+
+    const trendHours = this._config.trend_hours || 168;
+    const now = new Date();
+    const startTime = new Date(now.getTime() - trendHours * 60 * 60 * 1000);
+
+    try {
+      const result = (await this.hass.connection?.sendMessagePromise({
+        type: 'history/history_during_period',
+        start_time: startTime.toISOString(),
+        end_time: now.toISOString(),
+        entity_ids: entityIds,
+        include_start_time_state: true,
+        significant_changes_only: false,
+        no_attributes: true,
+      })) as Record<string, HistoryPoint[]> | undefined;
+
+      if (result) {
+        this._historyData = { ...this._historyData, ...result };
+        this._lastHistoryFetch = Date.now();
+      }
+    } catch (err) {
+      console.error('Error fetching GasBuddy card history:', err);
+    }
+  }
+
+  private _onTabKeydown = (ev: KeyboardEvent): void => {
+    // Implements the WAI-ARIA Authoring Practices "Tabs with Manual Activation"
+    // keyboard pattern, scoped to a two-tab carousel.
+    if (
+      ev.key === 'ArrowLeft' ||
+      ev.key === 'ArrowRight' ||
+      ev.key === 'Home' ||
+      ev.key === 'End'
+    ) {
+      ev.preventDefault();
+      this._activeTab = this._activeTab === 'gas' ? 'ev' : 'gas';
+      this._moveFocusToActiveTab = true;
+    }
+  };
 
   protected override shouldUpdate(changedProperties: PropertyValues): boolean {
     if (changedProperties.has('_config') || changedProperties.has('_activeTab')) {
@@ -263,7 +363,7 @@ export class GasBuddyCard extends LitElement {
           stationAddress = String(attrs.street_address);
         }
         if (attrs.distance_miles !== undefined && !distance) {
-          distance = formatDistance(attrs.distance_miles);
+          distance = formatDistance(attrs.distance_miles, this.hass);
         }
         if (attrs.entity_picture && !brandLogoUrl) {
           brandLogoUrl = attrs.entity_picture as string;
@@ -328,7 +428,10 @@ export class GasBuddyCard extends LitElement {
               ${stationAddress}${stationAddress && distance ? ` • ${distance}` : distance}
             </div>
           </div>
-          <div class="brand-logo" aria-hidden="true">
+          <div
+            class="brand-logo ${currentTab === 'ev' && entities.ev_network ? 'brand-network' : ''}"
+            aria-hidden="true"
+          >
             ${currentTab === 'ev' && entities.ev_network
               ? getNetworkLogo(this.hass.states[entities.ev_network]?.state || '')
               : brandLogoUrl
@@ -340,20 +443,28 @@ export class GasBuddyCard extends LitElement {
         <!-- Tab Switcher -->
         ${hasGas && hasEV
           ? html`
-              <div class="tabs" role="tablist">
+              <div class="tabs" role="tablist" aria-label="Service type">
                 <button
+                  id="gasbuddy-tab-gas"
                   class="tab ${currentTab === 'gas' ? 'active' : ''}"
                   role="tab"
                   aria-selected="${currentTab === 'gas' ? 'true' : 'false'}"
+                  aria-controls="gasbuddy-panel-gas"
+                  tabindex="${currentTab === 'gas' ? '0' : '-1'}"
                   @click=${() => (this._activeTab = 'gas')}
+                  @keydown=${this._onTabKeydown}
                 >
                   Gas Prices
                 </button>
                 <button
+                  id="gasbuddy-tab-ev"
                   class="tab ${currentTab === 'ev' ? 'active' : ''}"
                   role="tab"
                   aria-selected="${currentTab === 'ev' ? 'true' : 'false'}"
+                  aria-controls="gasbuddy-panel-ev"
+                  tabindex="${currentTab === 'ev' ? '0' : '-1'}"
                   @click=${() => (this._activeTab = 'ev')}
+                  @keydown=${this._onTabKeydown}
                 >
                   EV Chargers
                 </button>
@@ -362,24 +473,79 @@ export class GasBuddyCard extends LitElement {
           : ''}
 
         <!-- Tab Content -->
-        <div class="tab-content">
-          ${currentTab === 'gas' ? this._renderGasContent(entities) : this._renderEVContent(entities)}
-        </div>
+        ${hasGas && hasEV
+          ? html`
+              <div
+                id="gasbuddy-panel-gas"
+                class="tab-content"
+                role="tabpanel"
+                aria-labelledby="gasbuddy-tab-gas"
+                tabindex="0"
+                ?hidden=${currentTab !== 'gas'}
+              >
+                ${this._renderGasContent(entities)}
+              </div>
+              <div
+                id="gasbuddy-panel-ev"
+                class="tab-content"
+                role="tabpanel"
+                aria-labelledby="gasbuddy-tab-ev"
+                tabindex="0"
+                ?hidden=${currentTab !== 'ev'}
+              >
+                ${this._renderEVContent(entities)}
+              </div>
+            `
+          : html`
+              <div class="tab-content">
+                ${currentTab === 'gas' ? this._renderGasContent(entities) : this._renderEVContent(entities)}
+              </div>
+            `}
 
         <!-- Footer -->
         <div class="footer">
           <div class="attribution">${attribution}</div>
-          <div class="last-updated">
-            <ha-icon icon="mdi:clock-outline" aria-hidden="true"></ha-icon>
-            <span>
-              Updated:
-              ${entities.last_updated
-                ? formatTimestamp(this.hass.states[entities.last_updated]?.state)
-                : 'Recent'}
-            </span>
-          </div>
+          ${entities.last_updated
+            ? html`
+                <div class="last-updated">
+                  <ha-icon icon="mdi:clock-outline" aria-hidden="true"></ha-icon>
+                  <span>Updated: ${formatTimestamp(this.hass.states[entities.last_updated]?.state)}</span>
+                </div>
+              `
+            : ''}
         </div>
       </ha-card>
+    `;
+  }
+
+  private _renderTrendGraph(entityId?: string): TemplateResult {
+    if (!this._config?.show_trend || !entityId) {
+      return html``;
+    }
+
+    const history = this._historyData[entityId];
+    if (!history || history.length === 0) {
+      return html``;
+    }
+
+    const { stroke, fill } = generateSparklinePaths(history);
+    if (!stroke) {
+      return html``;
+    }
+
+    const gradId = `grad-${entityId.replace(/\./g, '-')}`;
+
+    return html`
+      <svg class="trend-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="${gradId}" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="var(--primary-color)" stop-opacity="0.25" />
+            <stop offset="100%" stop-color="var(--primary-color)" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <path d="${fill}" fill="url(#${gradId})" />
+        <path d="${stroke}" fill="none" stroke="var(--primary-color)" stroke-width="1.5" />
+      </svg>
     `;
   }
 
@@ -412,8 +578,10 @@ export class GasBuddyCard extends LitElement {
           const creditState = creditEntityId ? this.hass!.states[creditEntityId] : undefined;
           const cashState = cashEntityId ? this.hass!.states[cashEntityId] : undefined;
 
-          const creditPriceStr = creditState ? formatPrice(creditState.state) : '';
-          const cashPriceStr = cashState ? formatPrice(cashState.state) : '';
+          const creditUnit = creditState?.attributes?.unit_of_measurement as string | undefined;
+          const cashUnit = cashState?.attributes?.unit_of_measurement as string | undefined;
+          const creditPriceStr = creditState ? formatPrice(creditState.state, creditUnit) : '';
+          const cashPriceStr = cashState ? formatPrice(cashState.state, cashUnit) : '';
 
           const displayPrice = creditPriceStr || cashPriceStr || '-';
           const hasBoth = creditPriceStr && cashPriceStr && creditPriceStr !== cashPriceStr;
@@ -427,7 +595,8 @@ export class GasBuddyCard extends LitElement {
 
           return html`
             <div class="price-card" role="group" aria-label="${grade.name} price: ${creditPriceStr && cashPriceStr ? `${creditPriceStr} Credit, ${cashPriceStr} Cash` : `${displayPrice} ${creditPriceStr ? 'Credit' : 'Cash'}`}">
-              <div aria-hidden="true">
+              ${this._renderTrendGraph(creditEntityId || cashEntityId)}
+              <div class="price-card-content" aria-hidden="true">
                 <div class="fuel-type">${grade.name}</div>
                 ${hasBoth
                   ? html`

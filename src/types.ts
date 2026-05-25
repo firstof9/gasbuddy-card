@@ -25,6 +25,13 @@ export interface HomeAssistant {
   entities?: Record<string, HomeAssistantEntity>;
   locale?: { language?: string };
   language?: string;
+  config?: {
+    unit_system?: {
+      length?: string;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
   connection?: {
     sendMessagePromise: (msg: Record<string, unknown>) => Promise<unknown>;
   };
@@ -35,6 +42,8 @@ export interface GasBuddyCardConfig {
   device_id?: string;
   title?: string;
   default_mode?: 'gas' | 'ev';
+  show_trend?: boolean;
+  trend_hours?: number;
   
   // Overrides for specific sensors
   regular_gas_entity?: string;

@@ -92,6 +92,38 @@ export const cardStyles = css`
     color: var(--primary-color);
   }
 
+  /* When the brand slot holds an EV network logo (SVG or pill), drop the
+     white "card" framing — the brand color carries the visual itself. */
+  .brand-logo.brand-network {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    min-width: 0;
+    max-width: none;
+    overflow: visible;
+  }
+
+  .network-svg {
+    width: 32px;
+    height: 32px;
+    display: block;
+  }
+
+  .network-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #fff;
+    white-space: nowrap;
+    line-height: 1;
+  }
+
   /* Mode Switcher Tabs */
   .tabs {
     display: flex;
@@ -140,11 +172,33 @@ export const cardStyles = css`
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    position: relative;
+    overflow: hidden;
   }
 
   .price-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--ha-card-box-shadow, 0 4px 8px rgba(0,0,0,0.1));
+  }
+
+  .price-card-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
+    height: 100%;
+  }
+
+  .trend-svg {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
   }
 
   .fuel-type {

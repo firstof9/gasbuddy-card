@@ -26,6 +26,17 @@ const SCHEMA: HaFormSchemaEntry[] = [
     helper: 'Custom title shown at the top of the card. Falls back to the station name.',
     selector: { text: {} },
   },
+  {
+    name: 'show_trend',
+    label: 'Show Background Trend Graph',
+    selector: { boolean: {} },
+  },
+  {
+    name: 'trend_hours',
+    label: 'Trend Hours',
+    helper: 'Hours of price history to display. Default is 168 (7 days).',
+    selector: { number: { min: 1, max: 720, mode: 'box' } },
+  },
 
   // Overrides section
   {

@@ -1,3 +1,9 @@
+name-template: '$RESOLVED_VERSION'
+tag-template: '$RESOLVED_VERSION'
+version-template: '$MAJOR.$MINOR.$PATCH'
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+sort-direction: ascending
+
 categories:
   - title: '✨ Enhancements'
     labels:
@@ -10,6 +16,9 @@ categories:
     labels:
       - 'fix'
       - 'bug'
+  - title: '⚡ Performance'
+    labels:
+      - 'performance'
   - title: '📖 Documentation'
     labels:
       - 'docs'
@@ -34,7 +43,7 @@ autolabeler:
   - label: 'fix'
     title:
       - '/^fix(\(.+\))?:/i'
-  - label: 'docs'
+  - label: 'documentation'
     title:
       - '/^docs(\(.+\))?:/i'
   - label: 'chore'
@@ -47,7 +56,7 @@ autolabeler:
     title:
       - '/^ci(\(.+\))?:/i'
       - '/^build(\(.+\))?:/i'
-  - label: 'enhancement'
+  - label: 'performance'
     title:
       - '/^perf(\(.+\))?:/i'
   - label: 'chore'
@@ -58,6 +67,30 @@ autolabeler:
     title:
       - '/^build\(deps\)(\(.+\))?:/i'
       - '/^deps(\(.+\))?:/i'
+
+version-resolver:
+  major:
+    labels:
+      - 'breaking-change'
+      - 'breaking change'
+  minor:
+    labels:
+      - 'feature'
+      - 'enhancement'
+  patch:
+    labels:
+      - 'bug'
+      - 'fix'
+      - 'performance'
+      - 'refactor'
+      - 'style'
+      - 'build'
+      - 'chore'
+      - 'documentation'
+      - 'ci'
+      - 'test'
+      - 'dependencies'
+  default: patch
 
 template: |
   ## Changes
