@@ -596,8 +596,6 @@ export function getSparklineExtremes(
 ): SparklineExtremes | null {
   if (!history || history.length === 0) return null;
 
-  // Same parse pass as generateSparklinePaths — kept inline (not extracted
-  // into a shared helper) so this PR doesn't touch the prior function.
   const points: Array<{ val: number; time: number }> = [];
   for (const d of history) {
     const stateStr = d.s !== undefined ? d.s : d.state;
@@ -652,4 +650,92 @@ export function getSparklineExtremes(
   };
 }
 
+export interface SparklinePointAt {
+  // viewBox coords (0..100 / 0..50)
+  x: number;
+  y: number;
+  // raw value at that point
+  value: number;
+  // unix seconds for the matched point (the time format generateSparklinePaths
+  // also normalizes to)
+  timeSeconds: number;
+}
 
+/**
+ * Maps a viewBox X coordinate (0..100, same coordinate space as
+ * generateSparklinePaths) to the nearest history point and returns its
+ * coordinates plus raw value/time so a caller can draw a hover guide
+ * line and a tooltip on it.
+ *
+ * Returns null when:
+ *  - history is empty or has no numeric points
+ *  - only one valid point exists (a flat-line sparkline; nothing to
+ *    target on hover)
+ *
+ * `viewBoxX` is clamped to [0, 100] so out-of-range mouse positions
+ * resolve to the closest endpoint.
+ */
+export function findNearestSparklinePoint(
+  history: HistoryPoint[] | undefined,
+  viewBoxX: number,
+  minY: number = 40,
+  maxY: number = 10,
+): SparklinePointAt | null {
+  if (!history || history.length === 0) return null;
+
+  const points: Array<{ val: number; time: number }> = [];
+  for (const d of history) {
+    const stateStr = d.s !== undefined ? d.s : d.state;
+    const rawTime =
+      d.t !== undefined ? d.t
+      : d.lu !== undefined ? d.lu
+      : d.lc !== undefined ? d.lc
+      : d.last_updated !== undefined ? d.last_updated
+      : d.last_changed;
+    const val = Number(stateStr);
+    let time = NaN;
+    if (typeof rawTime === 'number') {
+      time = rawTime;
+    } else if (typeof rawTime === 'string') {
+      const parsedNum = Number(rawTime);
+      time = isNaN(parsedNum) ? Date.parse(rawTime) / 1000 : parsedNum;
+    }
+    if (!isNaN(val) && !isNaN(time)) {
+      points.push({ val, time });
+    }
+  }
+
+  if (points.length < 2) return null;
+
+  let minTime = points[0].time;
+  let maxTime = points[0].time;
+  let minVal = points[0].val;
+  let maxVal = points[0].val;
+  for (let i = 1; i < points.length; i++) {
+    const { time, val } = points[i];
+    if (time < minTime) minTime = time;
+    else if (time > maxTime) maxTime = time;
+    if (val < minVal) minVal = val;
+    else if (val > maxVal) maxVal = val;
+  }
+
+  const clampedX = Math.max(0, Math.min(100, viewBoxX));
+  const targetTime = minTime + (clampedX / 100) * (maxTime - minTime);
+
+  let nearest = points[0];
+  let bestDelta = Math.abs(nearest.time - targetTime);
+  for (let i = 1; i < points.length; i++) {
+    const d = Math.abs(points[i].time - targetTime);
+    if (d < bestDelta) {
+      bestDelta = d;
+      nearest = points[i];
+    }
+  }
+
+  const timeDiff = maxTime - minTime || 1;
+  const valDiff = maxVal - minVal || 1;
+  const x = ((nearest.time - minTime) / timeDiff) * 100;
+  const y = minVal === maxVal ? (minY + maxY) / 2 : minY - ((nearest.val - minVal) / valDiff) * (minY - maxY);
+
+  return { x, y, value: nearest.val, timeSeconds: nearest.time };
+}

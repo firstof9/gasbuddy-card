@@ -13,8 +13,10 @@ import {
   generateSparklinePaths,
   computePriceTrend,
   getSparklineExtremes,
+  findNearestSparklinePoint,
   type HistoryPoint,
   type PriceTrend,
+  type SparklinePointAt,
 } from './helpers.js';
 import { t } from './i18n.js';
 
@@ -71,6 +73,12 @@ export class GasBuddyCard extends LitElement {
   @state() private _config?: GasBuddyCardConfig;
   @state() private _activeTab: 'gas' | 'ev' = 'gas';
   @state() private _historyData: Record<string, HistoryPoint[]> = {};
+  // Hovered trend graph (mouse over a price card with show_trend on).
+  // Lit re-renders whenever this changes; one card at a time.
+  @state() private _hoverState: {
+    entityId: string;
+    point: SparklinePointAt;
+  } | null = null;
   private _lastHistoryFetch?: number;
   private _historyFetchInFlight = false;
   // device_id the current _historyData belongs to; used to reset on device change.
@@ -235,6 +243,34 @@ export class GasBuddyCard extends LitElement {
 
   private _onSelectEvTab = (): void => {
     this._activeTab = 'ev';
+  };
+
+  private _onPriceCardPointerMove(entityId: string | undefined, ev: PointerEvent): void {
+    if (!entityId || !this._config?.show_trend) return;
+    const history = this._historyData[entityId];
+    if (!history || history.length < 2) return;
+    const card = ev.currentTarget as HTMLElement | null;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const relativeX = (ev.clientX - rect.left) / rect.width;
+    const viewBoxX = Math.max(0, Math.min(100, relativeX * 100));
+    const point = findNearestSparklinePoint(history, viewBoxX);
+    if (!point) {
+      if (this._hoverState) this._hoverState = null;
+      return;
+    }
+    if (
+      !this._hoverState ||
+      this._hoverState.entityId !== entityId ||
+      this._hoverState.point.timeSeconds !== point.timeSeconds
+    ) {
+      this._hoverState = { entityId, point };
+    }
+  }
+
+  private _onPriceCardPointerLeave = (): void => {
+    if (this._hoverState) this._hoverState = null;
   };
 
   private _onTabKeydown = (ev: KeyboardEvent): void => {
@@ -609,6 +645,7 @@ export class GasBuddyCard extends LitElement {
 
     const gradId = `grad-${entityId.replace(/\./g, '-')}`;
     const extremes = getSparklineExtremes(history);
+    const hover = this._hoverState?.entityId === entityId ? this._hoverState.point : null;
 
     return html`
       <svg
@@ -642,7 +679,40 @@ export class GasBuddyCard extends LitElement {
               ></circle>
             `
           : ''}
+        ${hover
+          ? html`
+              <line
+                class="trend-hover-guide"
+                x1="${hover.x.toFixed(2)}"
+                x2="${hover.x.toFixed(2)}"
+                y1="0"
+                y2="50"
+              ></line>
+              <circle
+                class="trend-hover-dot"
+                cx="${hover.x.toFixed(2)}"
+                cy="${hover.y.toFixed(2)}"
+                r="2"
+              ></circle>
+            `
+          : ''}
       </svg>
+    `;
+  }
+
+  private _renderTrendTooltip(entityId: string | undefined, creditUnit?: string, cashUnit?: string): TemplateResult {
+    if (!entityId || this._hoverState?.entityId !== entityId) return html``;
+    const point = this._hoverState.point;
+    const unit = creditUnit ?? cashUnit;
+    const priceStr = formatPrice(point.value, unit);
+    const timeStr = formatTimestamp(new Date(point.timeSeconds * 1000).toISOString());
+    // Clamp the tooltip's horizontal position to keep it inside the card.
+    const leftPct = Math.max(8, Math.min(92, point.x));
+    return html`
+      <div class="trend-tooltip" style="left: ${leftPct.toFixed(2)}%">
+        <span class="trend-tooltip-price">${priceStr}</span>
+        <span class="trend-tooltip-time">${timeStr}</span>
+      </div>
     `;
   }
 
@@ -685,6 +755,7 @@ export class GasBuddyCard extends LitElement {
             cashState?.attributes?.unit_of_measurement ??
             '';
 
+          const trendEntityId = creditEntityId || cashEntityId;
           return html`
             <div
               class="price-card"
@@ -692,8 +763,10 @@ export class GasBuddyCard extends LitElement {
               aria-label="${grade.name} price: ${creditPriceStr && cashPriceStr
                 ? `${creditPriceStr} ${t(this.hass, 'price_credit')}, ${cashPriceStr} ${t(this.hass, 'price_cash')}`
                 : `${displayPrice} ${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')}`}"
+              @pointermove=${(ev: PointerEvent) => this._onPriceCardPointerMove(trendEntityId, ev)}
+              @pointerleave=${this._onPriceCardPointerLeave}
             >
-              ${this._renderTrendGraph(creditEntityId || cashEntityId)}
+              ${this._renderTrendGraph(trendEntityId)}
               <div class="price-card-content" aria-hidden="true">
                 <div class="fuel-type">${grade.name}</div>
                 ${hasBoth
@@ -718,6 +791,7 @@ export class GasBuddyCard extends LitElement {
                   <span>${unit || 'USD'}</span>
                 </div>
               </div>
+              ${this._renderTrendTooltip(trendEntityId, creditUnit, cashUnit)}
             </div>
           `;
         })}

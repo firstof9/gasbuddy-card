@@ -9,6 +9,7 @@ import {
   generateSparklinePaths,
   computePriceTrend,
   getSparklineExtremes,
+  findNearestSparklinePoint,
 } from './helpers.js';
 import type { HomeAssistant } from './types.js';
 
@@ -600,3 +601,86 @@ describe('getSparklineExtremes', () => {
   });
 });
 
+describe('findNearestSparklinePoint', () => {
+  it('returns null for empty or single-point history', () => {
+    expect(findNearestSparklinePoint(undefined, 50)).toBeNull();
+    expect(findNearestSparklinePoint([], 50)).toBeNull();
+    expect(findNearestSparklinePoint([{ s: '3.00', t: 1000 }], 50)).toBeNull();
+  });
+
+  it('returns null when fewer than 2 valid numeric points survive parsing', () => {
+    expect(
+      findNearestSparklinePoint(
+        [
+          { s: '3.00', t: 1000 },
+          { s: 'unavailable', t: 2000 },
+          { s: 'unknown', t: 3000 },
+        ],
+        50,
+      ),
+    ).toBeNull();
+  });
+
+  it('picks the leftmost point for viewBoxX=0 and rightmost for viewBoxX=100', () => {
+    const history = [
+      { s: '3.00', t: 1000 },
+      { s: '3.50', t: 2000 },
+      { s: '4.00', t: 3000 },
+    ];
+    expect(findNearestSparklinePoint(history, 0)!.timeSeconds).toBe(1000);
+    expect(findNearestSparklinePoint(history, 100)!.timeSeconds).toBe(3000);
+  });
+
+  it('picks the middle point for viewBoxX=50 on evenly-spaced history', () => {
+    const history = [
+      { s: '3.00', t: 1000 },
+      { s: '3.50', t: 2000 },
+      { s: '4.00', t: 3000 },
+    ];
+    const nearest = findNearestSparklinePoint(history, 50)!;
+    expect(nearest.timeSeconds).toBe(2000);
+    expect(nearest.value).toBe(3.5);
+  });
+
+  it('clamps viewBoxX outside [0, 100] to the nearest endpoint', () => {
+    const history = [
+      { s: '3.00', t: 1000 },
+      { s: '4.00', t: 2000 },
+    ];
+    expect(findNearestSparklinePoint(history, -50)!.timeSeconds).toBe(1000);
+    expect(findNearestSparklinePoint(history, 200)!.timeSeconds).toBe(2000);
+  });
+
+  it('returns viewBox coordinates that match the sparkline mapping', () => {
+    // Three points at t=1000,2000,3000 with vals 3,3.5,4 — middle point
+    // resolves to x≈50, y≈25 (midpoint of default 40..10 range).
+    const history = [
+      { s: '3.00', t: 1000 },
+      { s: '3.50', t: 2000 },
+      { s: '4.00', t: 3000 },
+    ];
+    const nearest = findNearestSparklinePoint(history, 50)!;
+    expect(nearest.x).toBeCloseTo(50, 5);
+    expect(nearest.y).toBeCloseTo(25, 5);
+  });
+
+  it('honours custom minY and maxY parameters', () => {
+    const history = [
+      { s: '3.00', t: 1000 },
+      { s: '4.00', t: 2000 },
+    ];
+    // minY=30, maxY=20: max value 4 sits at y=20, min value 3 at y=30.
+    expect(findNearestSparklinePoint(history, 0, 30, 20)!.y).toBe(30);
+    expect(findNearestSparklinePoint(history, 100, 30, 20)!.y).toBe(20);
+  });
+
+  it('supports the standard state/last_updated keys', () => {
+    const history = [
+      { state: '3.00', last_updated: '2026-05-24T20:00:00.000Z' },
+      { state: '4.00', last_updated: '2026-05-24T21:00:00.000Z' },
+    ];
+    const nearest = findNearestSparklinePoint(history, 0)!;
+    expect(nearest.value).toBe(3.0);
+    expect(nearest.timeSeconds).toBe(Date.parse('2026-05-24T20:00:00.000Z') / 1000);
+  });
+});
