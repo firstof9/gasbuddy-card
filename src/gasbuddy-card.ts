@@ -64,6 +64,9 @@ export class GasBuddyCard extends LitElement {
   @state() private _activeTab: 'gas' | 'ev' = 'gas';
   @state() private _historyData: Record<string, HistoryPoint[]> = {};
   private _lastHistoryFetch?: number;
+  private _historyFetchInFlight = false;
+  // device_id the current _historyData belongs to; used to reset on device change.
+  private _historyForDevice?: string;
 
   // Set when a keyboard-driven tab switch needs to move focus to the
   // newly-active tab after the next render. Not a reactive @state.
@@ -158,6 +161,18 @@ export class GasBuddyCard extends LitElement {
     const deviceId = this._config.device_id;
     if (!deviceId) return;
 
+    // Guard against concurrent fetches: shouldUpdate fires often enough
+    // that a second pass can be triggered while the first is still
+    // awaiting the WebSocket response. Without this, two requests race
+    // and the later one can overwrite the earlier one out of order.
+    if (this._historyFetchInFlight) return;
+
+    // Drop stale history when the configured device changes. The previous
+    // sparklines belong to a different station entirely.
+    if (this._historyForDevice && this._historyForDevice !== deviceId) {
+      this._historyData = {};
+    }
+
     const discovered = findDeviceEntities(this.hass, deviceId);
     const entities = {
       regular_gas: this._config.regular_gas_entity || discovered.regular_gas,
@@ -184,6 +199,7 @@ export class GasBuddyCard extends LitElement {
     const now = new Date();
     const startTime = new Date(now.getTime() - trendHours * 60 * 60 * 1000);
 
+    this._historyFetchInFlight = true;
     try {
       const result = (await this.hass.connection?.sendMessagePromise({
         type: 'history/history_during_period',
@@ -196,11 +212,17 @@ export class GasBuddyCard extends LitElement {
       })) as Record<string, HistoryPoint[]> | undefined;
 
       if (result) {
-        this._historyData = { ...this._historyData, ...result };
+        // Replace rather than merge: only entityIds in the current request
+        // are valid. Merging accumulates entries for sensors that have
+        // since been deconfigured.
+        this._historyData = result;
+        this._historyForDevice = deviceId;
         this._lastHistoryFetch = Date.now();
       }
     } catch (err) {
       console.error('Error fetching GasBuddy card history:', err);
+    } finally {
+      this._historyFetchInFlight = false;
     }
   }
 
