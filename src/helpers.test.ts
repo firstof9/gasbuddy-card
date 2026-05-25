@@ -269,5 +269,115 @@ describe('generateSparklinePaths', () => {
       fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
     });
   });
+
+  it('falls back to lc when t and lu are absent', () => {
+    const history = [
+      { s: '3.00', lc: 1000 },
+      { s: '4.00', lc: 2000 },
+    ];
+    expect(generateSparklinePaths(history)).toEqual({
+      stroke: 'M 0.0,40.0 L 100.0,10.0',
+      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+    });
+  });
+
+  it('falls back to last_changed when no other timestamp key is set', () => {
+    const history = [
+      { state: '3.00', last_changed: '2026-05-24T20:00:00.000Z' },
+      { state: '4.00', last_changed: '2026-05-24T21:00:00.000Z' },
+    ];
+    expect(generateSparklinePaths(history)).toEqual({
+      stroke: 'M 0.0,40.0 L 100.0,10.0',
+      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+    });
+  });
+
+  it('prefers t over lu when both are present', () => {
+    // If lu were used, the points would map to different x positions.
+    // With t winning, both points share t=1000 so the single-point
+    // flat-line branch should trigger.
+    const history = [
+      { s: '3.00', t: 1000, lu: 5000 },
+      { s: '4.00', t: 1000, lu: 9000 },
+    ];
+    // Both points share the same time, so timeDiff = 0 → divides by 1.
+    // Both map to x=0; values still differ so y splits.
+    const result = generateSparklinePaths(history);
+    expect(result.stroke.startsWith('M 0.0,')).toBe(true);
+    expect(result.stroke).toContain(' L 0.0,');
+  });
+
+  it('parses numeric-string timestamps', () => {
+    const history = [
+      { s: '3.00', t: '1000' as unknown as number },
+      { s: '4.00', t: '2000' as unknown as number },
+    ];
+    expect(generateSparklinePaths(history)).toEqual({
+      stroke: 'M 0.0,40.0 L 100.0,10.0',
+      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+    });
+  });
+
+  it('drops invalid points but keeps the valid ones', () => {
+    const history = [
+      { s: '3.00', t: 1000 },
+      { s: 'unavailable', t: 1500 },
+      { s: '4.00', t: 2000 },
+      { s: 'unknown', t: 2500 },
+    ];
+    // Should behave as a 2-point line from the surviving entries.
+    expect(generateSparklinePaths(history)).toEqual({
+      stroke: 'M 0.0,40.0 L 100.0,10.0',
+      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+    });
+  });
+
+  it('honours custom minY and maxY parameters', () => {
+    const history = [
+      { s: '3.00', t: 1000 },
+      { s: '4.00', t: 2000 },
+    ];
+    // minY=30, maxY=20 → Y range is 10; value 3 → 30, value 4 → 20.
+    expect(generateSparklinePaths(history, 30, 20)).toEqual({
+      stroke: 'M 0.0,30.0 L 100.0,20.0',
+      fill: 'M 0.0,30.0 L 100.0,20.0 L 100.0,50 L 0.0,50 Z',
+    });
+  });
+
+  it('uses the midpoint of custom range when all values are equal', () => {
+    const history = [
+      { s: '3.50', t: 1000 },
+      { s: '3.50', t: 2000 },
+    ];
+    // (30 + 20) / 2 = 25
+    expect(generateSparklinePaths(history, 30, 20)).toEqual({
+      stroke: 'M 0.0,25.0 L 100.0,25.0',
+      fill: 'M 0.0,25.0 L 100.0,25.0 L 100.0,50 L 0.0,50 Z',
+    });
+  });
+
+  it('handles points where state-keyed and t-keyed forms are mixed', () => {
+    const history = [
+      { state: '3.00', last_updated: 1000 },
+      { s: '4.00', t: 2000 },
+    ];
+    expect(generateSparklinePaths(history)).toEqual({
+      stroke: 'M 0.0,40.0 L 100.0,10.0',
+      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+    });
+  });
+
+  it('renders correctly when points are not sorted by time', () => {
+    // The function uses min/max time, not array order, for X mapping.
+    // First point in the path is whichever appears first in the array.
+    const history = [
+      { s: '4.00', t: 2000 },
+      { s: '3.00', t: 1000 },
+    ];
+    const { stroke } = generateSparklinePaths(history);
+    // first point: t=2000 → max time → x=100, val=4 → y=10
+    // second point: t=1000 → min time → x=0, val=3 → y=40
+    expect(stroke).toBe('M 100.0,10.0 L 0.0,40.0');
+  });
 });
 
