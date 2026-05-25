@@ -238,6 +238,53 @@ export const cardStyles = css`
     fill: var(--error-color, #db4437);
   }
 
+  .trend-hover-guide {
+    stroke: var(--accent-color);
+    stroke-width: 0.5;
+    stroke-dasharray: 1.5 1;
+    opacity: 0.75;
+  }
+
+  .trend-hover-dot {
+    fill: var(--accent-color);
+    stroke: var(--card-background-color, var(--ha-card-background, #fff));
+    stroke-width: 0.6;
+  }
+
+  /* Hover tooltip is rendered as a sibling of the trend SVG inside the
+     price-card. translateX(-50%) centers the tooltip on the inline-set
+     left percentage. pointer-events: none keeps the more-info click and
+     the hover detection on the parent card uninterrupted. */
+  .trend-tooltip {
+    position: absolute;
+    top: 4px;
+    transform: translateX(-50%);
+    background: var(--ha-card-background, var(--card-background-color, #222));
+    color: var(--primary-text-color);
+    border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 10px;
+    line-height: 1.2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    z-index: 2;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    white-space: nowrap;
+  }
+
+  .trend-tooltip-price {
+    font-weight: 700;
+  }
+
+  .trend-tooltip-time {
+    color: var(--secondary-text-color);
+    font-size: 9px;
+  }
+
   .fuel-type {
     font-size: 12px;
     font-weight: 600;
