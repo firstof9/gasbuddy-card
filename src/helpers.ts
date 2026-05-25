@@ -376,6 +376,8 @@ export function generateSparklinePaths(
     return { stroke: '', fill: '' };
   }
 
+  console.log('GasBuddyCard: first history point:', history[0]);
+
   // Parse points, filtering out non-numeric states, supporting both shorthand and standard keys
   const points = history
     .map((d) => {
@@ -398,6 +400,8 @@ export function generateSparklinePaths(
       return { val, time };
     })
     .filter((d) => !isNaN(d.val) && !isNaN(d.time));
+
+  console.log('GasBuddyCard: parsed points:', points.slice(0, 3));
 
   if (points.length === 0) {
     return { stroke: '', fill: '' };
