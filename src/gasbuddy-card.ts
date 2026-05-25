@@ -94,9 +94,18 @@ export class GasBuddyCard extends LitElement {
     if (!config) {
       throw new Error('Invalid configuration');
     }
+    const prevDeviceId = this._config?.device_id;
     this._config = config;
     if (config.default_mode) {
       this._activeTab = config.default_mode;
+    }
+    // Clear interaction + fetch state that's tied to the previous
+    // configuration so a config swap can't show a stale tooltip from
+    // the old card or skip the immediate history fetch via a stale
+    // throttle timestamp.
+    if (this._hoverState) this._hoverState = null;
+    if (prevDeviceId && prevDeviceId !== config.device_id) {
+      this._lastHistoryFetch = undefined;
     }
   }
 
