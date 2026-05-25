@@ -17,6 +17,45 @@ import {
 // Register the custom element editor
 import './editor.js';
 
+// Every config key the card consumes. Used both for entity resolution
+// and for the shouldUpdate / availability checks below — single source
+// of truth instead of 30-line literal repeated three times.
+const ENTITY_KEYS = [
+  'regular_gas', 'midgrade_gas', 'premium_gas', 'diesel',
+  'regular_gas_cash', 'midgrade_gas_cash', 'premium_gas_cash', 'diesel_cash',
+  'e85', 'e85_cash', 'e15', 'e15_cash', 'last_updated',
+  'ev_level1', 'ev_level2', 'ev_dc_fast',
+  'ev_j1772', 'ev_j1772_power',
+  'ev_ccs', 'ev_ccs_power',
+  'ev_chademo', 'ev_chademo_power',
+  'ev_nacs', 'ev_nacs_power',
+  'ev_status', 'ev_network', 'ev_pricing',
+  'ev_access_hours', 'ev_cards_accepted', 'ev_date_last_confirmed',
+] as const;
+
+type EntityKey = (typeof ENTITY_KEYS)[number];
+type ResolvedEntities = Record<EntityKey, string | undefined>;
+
+const GAS_AVAILABILITY_KEYS: EntityKey[] = [
+  'regular_gas', 'midgrade_gas', 'premium_gas', 'diesel',
+  'regular_gas_cash', 'midgrade_gas_cash', 'premium_gas_cash', 'diesel_cash',
+  'e15', 'e15_cash', 'e85', 'e85_cash',
+];
+
+const EV_AVAILABILITY_KEYS: EntityKey[] = [
+  'ev_level1', 'ev_level2', 'ev_dc_fast',
+  'ev_j1772', 'ev_ccs', 'ev_chademo', 'ev_nacs', 'ev_network',
+];
+
+interface StationMetadata {
+  name: string;
+  address: string;
+  distance: string;
+  brandLogoUrl: string;
+  attribution: string;
+  mapsUrl: string;
+}
+
 @customElement('gasbuddy-card')
 export class GasBuddyCard extends LitElement {
   @property({ attribute: false }) public hass?: HomeAssistant;
@@ -186,52 +225,14 @@ export class GasBuddyCard extends LitElement {
 
     if (changedProperties.has('hass')) {
       const oldHass = changedProperties.get('hass') as HomeAssistant | undefined;
-      if (!oldHass || !this.hass || !this._config) {
+      if (!oldHass || !this.hass || !this._config?.device_id) {
         return true;
       }
 
-      const deviceId = this._config.device_id;
-      if (!deviceId) return true;
-
-      const discovered = findDeviceEntities(this.hass, deviceId);
-      const entities = [
-        this._config.regular_gas_entity || discovered.regular_gas,
-        this._config.midgrade_gas_entity || discovered.midgrade_gas,
-        this._config.premium_gas_entity || discovered.premium_gas,
-        this._config.diesel_entity || discovered.diesel,
-        this._config.regular_gas_cash_entity || discovered.regular_gas_cash,
-        this._config.midgrade_gas_cash_entity || discovered.midgrade_gas_cash,
-        this._config.premium_gas_cash_entity || discovered.premium_gas_cash,
-        this._config.diesel_cash_entity || discovered.diesel_cash,
-        this._config.e85_entity || discovered.e85,
-        this._config.e85_cash_entity || discovered.e85_cash,
-        this._config.e15_entity || discovered.e15,
-        this._config.e15_cash_entity || discovered.e15_cash,
-        this._config.last_updated_entity || discovered.last_updated,
-        this._config.ev_level1_entity || discovered.ev_level1,
-        this._config.ev_level2_entity || discovered.ev_level2,
-        this._config.ev_dc_fast_entity || discovered.ev_dc_fast,
-        this._config.ev_j1772_entity || discovered.ev_j1772,
-        this._config.ev_j1772_power_entity || discovered.ev_j1772_power,
-        this._config.ev_ccs_entity || discovered.ev_ccs,
-        this._config.ev_ccs_power_entity || discovered.ev_ccs_power,
-        this._config.ev_chademo_entity || discovered.ev_chademo,
-        this._config.ev_chademo_power_entity || discovered.ev_chademo_power,
-        this._config.ev_nacs_entity || discovered.ev_nacs,
-        this._config.ev_nacs_power_entity || discovered.ev_nacs_power,
-        this._config.ev_status_entity || discovered.ev_status,
-        this._config.ev_network_entity || discovered.ev_network,
-        this._config.ev_pricing_entity || discovered.ev_pricing,
-        this._config.ev_access_hours_entity || discovered.ev_access_hours,
-        this._config.ev_cards_accepted_entity || discovered.ev_cards_accepted,
-        this._config.ev_date_last_confirmed_entity || discovered.ev_date_last_confirmed,
-      ].filter(Boolean) as string[];
-
-      // Check if any of the mapped entities have changed state/attributes
-      for (const entityId of entities) {
-        const oldState = oldHass.states[entityId];
-        const newState = this.hass.states[entityId];
-        if (oldState !== newState) {
+      const entities = this._resolveEntities(this._config.device_id);
+      for (const key of ENTITY_KEYS) {
+        const entityId = entities[key];
+        if (entityId && oldHass.states[entityId] !== this.hass.states[entityId]) {
           return true;
         }
       }
@@ -241,7 +242,6 @@ export class GasBuddyCard extends LitElement {
     return true;
   }
 
-  // Set up custom card editor integration
   public static getConfigElement() {
     return document.createElement('gasbuddy-card-editor');
   }
@@ -250,20 +250,18 @@ export class GasBuddyCard extends LitElement {
     hass: HomeAssistant,
     entities: string[],
   ): Record<string, string> {
-    // Find the first GasBuddy device or entity if possible
     const gasbuddyEntity = entities.find((eid) => {
       const stateObj = hass.states[eid];
       return (
         eid.startsWith('sensor.') &&
-        stateObj &&
-        stateObj.attributes &&
+        stateObj?.attributes &&
         (stateObj.attributes.attribution?.toLowerCase().includes('gasbuddy') ||
           eid.toLowerCase().includes('gasbuddy'))
       );
     });
 
     let deviceId = '';
-    if (gasbuddyEntity && hass.entities && hass.entities[gasbuddyEntity]) {
+    if (gasbuddyEntity && hass.entities?.[gasbuddyEntity]) {
       deviceId = hass.entities[gasbuddyEntity].device_id || '';
     }
 
@@ -274,10 +272,91 @@ export class GasBuddyCard extends LitElement {
     };
   }
 
-  protected override render(): TemplateResult {
-    if (!this.hass || !this._config) {
-      return html``;
+  private _resolveEntities(deviceId: string): ResolvedEntities {
+    const discovered = findDeviceEntities(this.hass!, deviceId);
+    const cfg = this._config!;
+    const result = {} as ResolvedEntities;
+    for (const key of ENTITY_KEYS) {
+      const override = cfg[`${key}_entity` as keyof GasBuddyCardConfig] as string | undefined;
+      result[key] = override || discovered[key];
     }
+    return result;
+  }
+
+  private _isAvailable(entityId?: string): boolean {
+    if (!entityId) return false;
+    const s = this.hass!.states[entityId];
+    return !!s && s.state !== 'unavailable' && s.state !== 'unknown';
+  }
+
+  private _collectStationMetadata(entities: ResolvedEntities): StationMetadata {
+    let name = 'Gas Station';
+    let address = '';
+    let distance = '';
+    let brandLogoUrl = '';
+    let attribution = 'GasBuddy';
+    let latitude: number | undefined;
+    let longitude: number | undefined;
+
+    for (const entityId of Object.values(entities)) {
+      if (!entityId) continue;
+      const stateObj = this.hass!.states[entityId];
+      if (!stateObj) continue;
+      const attrs = stateObj.attributes;
+      if (!attrs) continue;
+
+      if (attrs.attribution && attribution === 'GasBuddy') {
+        attribution = String(attrs.attribution);
+      }
+      if (attrs.station_name && name === 'Gas Station') {
+        name = String(attrs.station_name);
+      }
+      if (!address) {
+        if (attrs.station_address) address = String(attrs.station_address);
+        else if (attrs.street_address) address = String(attrs.street_address);
+      }
+      if (!distance && attrs.distance_miles !== undefined) {
+        distance = formatDistance(attrs.distance_miles, this.hass);
+      }
+      if (!brandLogoUrl && attrs.entity_picture) {
+        brandLogoUrl = attrs.entity_picture as string;
+      }
+      if (typeof attrs.latitude === 'number' && latitude === undefined) {
+        latitude = attrs.latitude;
+      }
+      if (typeof attrs.longitude === 'number' && longitude === undefined) {
+        longitude = attrs.longitude;
+      }
+    }
+
+    // Fallback: derive name from a friendly_name by stripping the sensor suffix.
+    if (name === 'Gas Station') {
+      const firstActive = Object.values(entities).find((eid) => eid && this.hass!.states[eid]);
+      if (firstActive) {
+        const friendlyName = this.hass!.states[firstActive]?.attributes?.friendly_name || '';
+        name = friendlyName
+          .replace(/\s(Regular|Midgrade|Premium|Diesel|Last Updated|EV Level|EV DC|EV CCS|EV NACS|EV CHAdeMO|EV J1772).*/i, '')
+          .trim();
+      }
+    }
+
+    if (this._config!.title) {
+      name = this._config!.title;
+    }
+
+    // Build a Google Maps URL from coords (preferred) or address.
+    let mapsUrl = '';
+    if (latitude !== undefined && longitude !== undefined) {
+      mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+    } else if (address) {
+      mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    }
+
+    return { name, address, distance, brandLogoUrl, attribution, mapsUrl };
+  }
+
+  protected override render(): TemplateResult {
+    if (!this.hass || !this._config) return html``;
 
     const deviceId = this._config.device_id;
     if (!deviceId) {
@@ -290,78 +369,9 @@ export class GasBuddyCard extends LitElement {
       `;
     }
 
-    // Resolve entities associated with this GasBuddy device
-    const discovered = findDeviceEntities(this.hass, deviceId);
-
-    // Merge discoveries with overrides
-    const entities = {
-      regular_gas: this._config.regular_gas_entity || discovered.regular_gas,
-      midgrade_gas: this._config.midgrade_gas_entity || discovered.midgrade_gas,
-      premium_gas: this._config.premium_gas_entity || discovered.premium_gas,
-      diesel: this._config.diesel_entity || discovered.diesel,
-      regular_gas_cash: this._config.regular_gas_cash_entity || discovered.regular_gas_cash,
-      midgrade_gas_cash: this._config.midgrade_gas_cash_entity || discovered.midgrade_gas_cash,
-      premium_gas_cash: this._config.premium_gas_cash_entity || discovered.premium_gas_cash,
-      diesel_cash: this._config.diesel_cash_entity || discovered.diesel_cash,
-      e85: this._config.e85_entity || discovered.e85,
-      e85_cash: this._config.e85_cash_entity || discovered.e85_cash,
-      e15: this._config.e15_entity || discovered.e15,
-      e15_cash: this._config.e15_cash_entity || discovered.e15_cash,
-      last_updated: this._config.last_updated_entity || discovered.last_updated,
-
-      ev_level1: this._config.ev_level1_entity || discovered.ev_level1,
-      ev_level2: this._config.ev_level2_entity || discovered.ev_level2,
-      ev_dc_fast: this._config.ev_dc_fast_entity || discovered.ev_dc_fast,
-      ev_j1772: this._config.ev_j1772_entity || discovered.ev_j1772,
-      ev_j1772_power: this._config.ev_j1772_power_entity || discovered.ev_j1772_power,
-      ev_ccs: this._config.ev_ccs_entity || discovered.ev_ccs,
-      ev_ccs_power: this._config.ev_ccs_power_entity || discovered.ev_ccs_power,
-      ev_chademo: this._config.ev_chademo_entity || discovered.ev_chademo,
-      ev_chademo_power: this._config.ev_chademo_power_entity || discovered.ev_chademo_power,
-      ev_nacs: this._config.ev_nacs_entity || discovered.ev_nacs,
-      ev_nacs_power: this._config.ev_nacs_power_entity || discovered.ev_nacs_power,
-      ev_status: this._config.ev_status_entity || discovered.ev_status,
-      ev_network: this._config.ev_network_entity || discovered.ev_network,
-      ev_pricing: this._config.ev_pricing_entity || discovered.ev_pricing,
-      ev_access_hours: this._config.ev_access_hours_entity || discovered.ev_access_hours,
-      ev_cards_accepted: this._config.ev_cards_accepted_entity || discovered.ev_cards_accepted,
-      ev_date_last_confirmed: this._config.ev_date_last_confirmed_entity || discovered.ev_date_last_confirmed,
-    };
-
-
-
-    // Check availability of gas vs EV options by verifying states are active (not unavailable/unknown)
-    const isAvailable = (entityId?: string) => {
-      if (!entityId) return false;
-      const stateObj = this.hass!.states[entityId];
-      return stateObj && stateObj.state !== 'unavailable' && stateObj.state !== 'unknown';
-    };
-
-    const hasGas = [
-      entities.regular_gas,
-      entities.midgrade_gas,
-      entities.premium_gas,
-      entities.diesel,
-      entities.regular_gas_cash,
-      entities.midgrade_gas_cash,
-      entities.premium_gas_cash,
-      entities.diesel_cash,
-      entities.e15,
-      entities.e15_cash,
-      entities.e85,
-      entities.e85_cash,
-    ].some(isAvailable);
-
-    const hasEV = [
-      entities.ev_level1,
-      entities.ev_level2,
-      entities.ev_dc_fast,
-      entities.ev_j1772,
-      entities.ev_ccs,
-      entities.ev_chademo,
-      entities.ev_nacs,
-      entities.ev_network,
-    ].some(isAvailable);
+    const entities = this._resolveEntities(deviceId);
+    const hasGas = GAS_AVAILABILITY_KEYS.some((k) => this._isAvailable(entities[k]));
+    const hasEV = EV_AVAILABILITY_KEYS.some((k) => this._isAvailable(entities[k]));
 
     if (!hasGas && !hasEV) {
       return html`
@@ -373,152 +383,17 @@ export class GasBuddyCard extends LitElement {
       `;
     }
 
-    // Auto-adjust active tab if only one service type is available
+    // Auto-force the active tab when only one mode is available.
     let currentTab = this._activeTab;
     if (hasGas && !hasEV) currentTab = 'gas';
     if (hasEV && !hasGas) currentTab = 'ev';
 
-
-    let stationName = 'Gas Station';
-    let stationAddress = '';
-    let distance = '';
-    let brandLogoUrl = '';
-    let attribution = 'GasBuddy';
-    let latitude: number | undefined;
-    let longitude: number | undefined;
-
-    // Scan all resolved entities to compile the most complete station metadata
-    for (const entityId of Object.values(entities)) {
-      if (!entityId) continue;
-      const stateObj = this.hass.states[entityId];
-      if (stateObj && stateObj.attributes) {
-        const attrs = stateObj.attributes;
-        if (attrs.attribution && attribution === 'GasBuddy') {
-          attribution = attrs.attribution;
-        }
-        if (attrs.station_name && stationName === 'Gas Station') {
-          stationName = String(attrs.station_name);
-        }
-        if (attrs.station_address && !stationAddress) {
-          stationAddress = String(attrs.station_address);
-        } else if (attrs.street_address && !stationAddress) {
-          stationAddress = String(attrs.street_address);
-        }
-        if (attrs.distance_miles !== undefined && !distance) {
-          distance = formatDistance(attrs.distance_miles, this.hass);
-        }
-        if (attrs.entity_picture && !brandLogoUrl) {
-          brandLogoUrl = attrs.entity_picture as string;
-        }
-        if (typeof attrs.latitude === 'number' && latitude === undefined) {
-          latitude = attrs.latitude;
-        }
-        if (typeof attrs.longitude === 'number' && longitude === undefined) {
-          longitude = attrs.longitude;
-        }
-      }
-    }
-
-    // Build a Google Maps URL from coords (preferred) or address.
-    let mapsUrl = '';
-    if (latitude !== undefined && longitude !== undefined) {
-      mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-    } else if (stationAddress) {
-      mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stationAddress)}`;
-    }
-
-    // Fallback: Parse name from friendly_name if no station_name attribute was found
-    if (stationName === 'Gas Station') {
-      const firstActiveEntityId = Object.values(entities).find(
-        (eid) => eid && this.hass!.states[eid],
-      );
-      if (firstActiveEntityId) {
-        const friendlyName = this.hass.states[firstActiveEntityId]?.attributes?.friendly_name || '';
-        stationName = friendlyName
-          .replace(/\s(Regular|Midgrade|Premium|Diesel|Last Updated|EV Level|EV DC|EV CCS|EV NACS|EV CHAdeMO|EV J1772).*/i, '')
-          .trim();
-      }
-    }
-
-    // Overwrite title if explicitly defined in card config
-    if (this._config.title) {
-      stationName = this._config.title;
-    }
+    const meta = this._collectStationMetadata(entities);
 
     return html`
       <ha-card>
-        <!-- Header -->
-        <div class="header">
-          <div class="header-text">
-            <div class="title ellipsis" role="heading" aria-level="2">
-              ${mapsUrl
-                ? html`
-                    <a
-                      class="title-link"
-                      href="${mapsUrl}"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Open in Maps"
-                    >
-                      ${stationName}
-                      <ha-icon class="title-link-icon" icon="mdi:open-in-new" aria-hidden="true"></ha-icon>
-                    </a>
-                  `
-                : stationName}
-            </div>
-            <div class="subtitle ellipsis">
-              ${stationAddress}${stationAddress && distance ? ` • ${distance}` : distance}
-            </div>
-          </div>
-          <div
-            class="brand-logo ${currentTab === 'ev' && entities.ev_network
-              ? 'brand-network'
-              : !brandLogoUrl
-              ? 'brand-logo--icon'
-              : ''}"
-            aria-hidden="true"
-          >
-            ${currentTab === 'ev' && entities.ev_network
-              ? getNetworkLogo(this.hass.states[entities.ev_network]?.state || '')
-              : brandLogoUrl
-              ? html`<img src="${brandLogoUrl}" alt="Brand logo" />`
-              : html`<ha-icon icon="mdi:gas-station"></ha-icon>`}
-          </div>
-        </div>
-
-        <!-- Tab Switcher -->
-        ${hasGas && hasEV
-          ? html`
-              <div class="tabs" role="tablist" aria-label="Service type">
-                <button
-                  id="gasbuddy-tab-gas"
-                  class="tab ${currentTab === 'gas' ? 'active' : ''}"
-                  role="tab"
-                  aria-selected="${currentTab === 'gas' ? 'true' : 'false'}"
-                  aria-controls="gasbuddy-panel-gas"
-                  tabindex="${currentTab === 'gas' ? '0' : '-1'}"
-                  @click=${() => (this._activeTab = 'gas')}
-                  @keydown=${this._onTabKeydown}
-                >
-                  Gas Prices
-                </button>
-                <button
-                  id="gasbuddy-tab-ev"
-                  class="tab ${currentTab === 'ev' ? 'active' : ''}"
-                  role="tab"
-                  aria-selected="${currentTab === 'ev' ? 'true' : 'false'}"
-                  aria-controls="gasbuddy-panel-ev"
-                  tabindex="${currentTab === 'ev' ? '0' : '-1'}"
-                  @click=${() => (this._activeTab = 'ev')}
-                  @keydown=${this._onTabKeydown}
-                >
-                  EV Chargers
-                </button>
-              </div>
-            `
-          : ''}
-
-        <!-- Tab Content -->
+        ${this._renderHeader(meta, currentTab, entities.ev_network)}
+        ${hasGas && hasEV ? this._renderTabs(currentTab) : ''}
         ${hasGas && hasEV
           ? html`
               <div
@@ -547,20 +422,101 @@ export class GasBuddyCard extends LitElement {
                 ${currentTab === 'gas' ? this._renderGasContent(entities) : this._renderEVContent(entities)}
               </div>
             `}
-
-        <!-- Footer -->
-        <div class="footer">
-          <div class="attribution">${attribution}</div>
-          ${entities.last_updated
-            ? html`
-                <div class="last-updated">
-                  <ha-icon icon="mdi:clock-outline" aria-hidden="true"></ha-icon>
-                  <span>Updated: ${formatTimestamp(this.hass.states[entities.last_updated]?.state)}</span>
-                </div>
-              `
-            : ''}
-        </div>
+        ${this._renderFooter(meta.attribution, entities.last_updated)}
       </ha-card>
+    `;
+  }
+
+  private _renderHeader(
+    meta: StationMetadata,
+    currentTab: 'gas' | 'ev',
+    evNetworkEntityId?: string,
+  ): TemplateResult {
+    return html`
+      <div class="header">
+        <div class="header-text">
+          <div class="title ellipsis" role="heading" aria-level="2">
+            ${meta.mapsUrl
+              ? html`
+                  <a
+                    class="title-link"
+                    href="${meta.mapsUrl}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open in Maps"
+                  >
+                    ${meta.name}
+                    <ha-icon class="title-link-icon" icon="mdi:open-in-new" aria-hidden="true"></ha-icon>
+                  </a>
+                `
+              : meta.name}
+          </div>
+          <div class="subtitle ellipsis">
+            ${meta.address}${meta.address && meta.distance ? ` • ${meta.distance}` : meta.distance}
+          </div>
+        </div>
+        <div
+          class="brand-logo ${currentTab === 'ev' && evNetworkEntityId
+            ? 'brand-network'
+            : !meta.brandLogoUrl
+            ? 'brand-logo--icon'
+            : ''}"
+          aria-hidden="true"
+        >
+          ${currentTab === 'ev' && evNetworkEntityId
+            ? getNetworkLogo(this.hass!.states[evNetworkEntityId]?.state || '')
+            : meta.brandLogoUrl
+            ? html`<img src="${meta.brandLogoUrl}" alt="Brand logo" />`
+            : html`<ha-icon icon="mdi:gas-station"></ha-icon>`}
+        </div>
+      </div>
+    `;
+  }
+
+  private _renderTabs(currentTab: 'gas' | 'ev'): TemplateResult {
+    return html`
+      <div class="tabs" role="tablist" aria-label="Service type">
+        <button
+          id="gasbuddy-tab-gas"
+          class="tab ${currentTab === 'gas' ? 'active' : ''}"
+          role="tab"
+          aria-selected="${currentTab === 'gas' ? 'true' : 'false'}"
+          aria-controls="gasbuddy-panel-gas"
+          tabindex="${currentTab === 'gas' ? '0' : '-1'}"
+          @click=${() => (this._activeTab = 'gas')}
+          @keydown=${this._onTabKeydown}
+        >
+          Gas Prices
+        </button>
+        <button
+          id="gasbuddy-tab-ev"
+          class="tab ${currentTab === 'ev' ? 'active' : ''}"
+          role="tab"
+          aria-selected="${currentTab === 'ev' ? 'true' : 'false'}"
+          aria-controls="gasbuddy-panel-ev"
+          tabindex="${currentTab === 'ev' ? '0' : '-1'}"
+          @click=${() => (this._activeTab = 'ev')}
+          @keydown=${this._onTabKeydown}
+        >
+          EV Chargers
+        </button>
+      </div>
+    `;
+  }
+
+  private _renderFooter(attribution: string, lastUpdatedEntityId?: string): TemplateResult {
+    return html`
+      <div class="footer">
+        <div class="attribution">${attribution}</div>
+        ${lastUpdatedEntityId
+          ? html`
+              <div class="last-updated">
+                <ha-icon icon="mdi:clock-outline" aria-hidden="true"></ha-icon>
+                <span>Updated: ${formatTimestamp(this.hass!.states[lastUpdatedEntityId]?.state)}</span>
+              </div>
+            `
+          : ''}
+      </div>
     `;
   }
 
@@ -595,24 +551,21 @@ export class GasBuddyCard extends LitElement {
     `;
   }
 
-  private _renderGasContent(entities: Record<string, string | undefined>): TemplateResult {
+  private _renderGasContent(entities: ResolvedEntities): TemplateResult {
     const fuelGrades = [
-      { key: 'regular_gas', name: 'Regular', cashKey: 'regular_gas_cash' },
-      { key: 'midgrade_gas', name: 'Midgrade', cashKey: 'midgrade_gas_cash' },
-      { key: 'premium_gas', name: 'Premium', cashKey: 'premium_gas_cash' },
-      { key: 'diesel', name: 'Diesel', cashKey: 'diesel_cash' },
-      { key: 'e15', name: 'UNL88', cashKey: 'e15_cash' },
-      { key: 'e85', name: 'E85', cashKey: 'e85_cash' },
+      { key: 'regular_gas' as const, name: 'Regular', cashKey: 'regular_gas_cash' as const },
+      { key: 'midgrade_gas' as const, name: 'Midgrade', cashKey: 'midgrade_gas_cash' as const },
+      { key: 'premium_gas' as const, name: 'Premium', cashKey: 'premium_gas_cash' as const },
+      { key: 'diesel' as const, name: 'Diesel', cashKey: 'diesel_cash' as const },
+      { key: 'e15' as const, name: 'UNL88', cashKey: 'e15_cash' as const },
+      { key: 'e85' as const, name: 'E85', cashKey: 'e85_cash' as const },
     ];
 
     const activeGrades = fuelGrades.filter((g) => {
-      const creditState = g.key in entities && entities[g.key] ? this.hass!.states[entities[g.key]!] : undefined;
-      const cashState = g.cashKey in entities && entities[g.cashKey] ? this.hass!.states[entities[g.cashKey]!] : undefined;
-
-      const isAvailable = (stateObj?: { state: string }) =>
-        stateObj && stateObj.state !== 'unavailable' && stateObj.state !== 'unknown';
-
-      return isAvailable(creditState) || isAvailable(cashState);
+      const creditState = entities[g.key] ? this.hass!.states[entities[g.key]!] : undefined;
+      const cashState = entities[g.cashKey] ? this.hass!.states[entities[g.cashKey]!] : undefined;
+      const ok = (s?: { state: string }) => s && s.state !== 'unavailable' && s.state !== 'unknown';
+      return ok(creditState) || ok(cashState);
     });
 
     return html`
@@ -632,15 +585,19 @@ export class GasBuddyCard extends LitElement {
           const displayPrice = creditPriceStr || cashPriceStr || '-';
           const hasBoth = creditPriceStr && cashPriceStr && creditPriceStr !== cashPriceStr;
 
-          let unit = '';
-          if (creditState && creditState.attributes.unit_of_measurement) {
-            unit = creditState.attributes.unit_of_measurement;
-          } else if (cashState && cashState.attributes.unit_of_measurement) {
-            unit = cashState.attributes.unit_of_measurement;
-          }
+          const unit =
+            creditState?.attributes?.unit_of_measurement ??
+            cashState?.attributes?.unit_of_measurement ??
+            '';
 
           return html`
-            <div class="price-card" role="group" aria-label="${grade.name} price: ${creditPriceStr && cashPriceStr ? `${creditPriceStr} Credit, ${cashPriceStr} Cash` : `${displayPrice} ${creditPriceStr ? 'Credit' : 'Cash'}`}">
+            <div
+              class="price-card"
+              role="group"
+              aria-label="${grade.name} price: ${creditPriceStr && cashPriceStr
+                ? `${creditPriceStr} Credit, ${cashPriceStr} Cash`
+                : `${displayPrice} ${creditPriceStr ? 'Credit' : 'Cash'}`}"
+            >
               ${this._renderTrendGraph(creditEntityId || cashEntityId)}
               <div class="price-card-content" aria-hidden="true">
                 <div class="fuel-type">${grade.name}</div>
@@ -672,7 +629,7 @@ export class GasBuddyCard extends LitElement {
     `;
   }
 
-  private _renderEVContent(entities: Record<string, string | undefined>): TemplateResult {
+  private _renderEVContent(entities: ResolvedEntities): TemplateResult {
     const l1Id = entities.ev_level1;
     const l2Id = entities.ev_level2;
     const dcId = entities.ev_dc_fast;
@@ -689,17 +646,22 @@ export class GasBuddyCard extends LitElement {
     ];
 
     const activeConnectors = connectors.filter(
-      (c) => c.countId && this.hass!.states[c.countId]?.state !== 'unavailable' && Number(this.hass!.states[c.countId]?.state) > 0,
+      (c) =>
+        c.countId &&
+        this.hass!.states[c.countId]?.state !== 'unavailable' &&
+        Number(this.hass!.states[c.countId]?.state) > 0,
     );
 
     const networkName = entities.ev_network ? this.hass!.states[entities.ev_network]?.state : '';
     const networkStateObj = entities.ev_network ? this.hass!.states[entities.ev_network] : undefined;
-    const website = networkStateObj && networkStateObj.attributes ? networkStateObj.attributes.website as string : undefined;
+    const website = networkStateObj?.attributes ? (networkStateObj.attributes.website as string) : undefined;
     const pricing = entities.ev_pricing ? this.hass!.states[entities.ev_pricing]?.state : '';
     const hours = entities.ev_access_hours ? this.hass!.states[entities.ev_access_hours]?.state : '';
     const acceptedCards = entities.ev_cards_accepted ? this.hass!.states[entities.ev_cards_accepted]?.state : '';
     const status = entities.ev_status ? this.hass!.states[entities.ev_status]?.state : '';
-    const lastConfirmed = entities.ev_date_last_confirmed ? this.hass!.states[entities.ev_date_last_confirmed]?.state : '';
+    const lastConfirmed = entities.ev_date_last_confirmed
+      ? this.hass!.states[entities.ev_date_last_confirmed]?.state
+      : '';
 
     return html`
       <div class="ev-section">
@@ -751,13 +713,15 @@ export class GasBuddyCard extends LitElement {
                     const power = c.powerId ? this.hass!.states[c.powerId]?.state : undefined;
                     const hasPower = power && power !== 'unknown' && power !== 'unavailable';
                     return html`
-                      <div class="connector-card" role="group" aria-label="${count} ${c.name} connectors${hasPower ? `, power capacity ${power} kilowatts` : ''}">
+                      <div
+                        class="connector-card"
+                        role="group"
+                        aria-label="${count} ${c.name} connectors${hasPower ? `, power capacity ${power} kilowatts` : ''}"
+                      >
                         <div class="connector-name" aria-hidden="true">${c.name}</div>
                         <div class="connector-details" aria-hidden="true">
                           <span class="connector-count">${count}x</span>
-                          ${hasPower
-                            ? html`<span class="connector-power">${power} kW</span>`
-                            : ''}
+                          ${hasPower ? html`<span class="connector-power">${power} kW</span>` : ''}
                         </div>
                       </div>
                     `;
