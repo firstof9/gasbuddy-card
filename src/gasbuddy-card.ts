@@ -220,7 +220,11 @@ export class GasBuddyCard extends LitElement {
   };
 
   protected override shouldUpdate(changedProperties: PropertyValues): boolean {
-    if (changedProperties.has('_config') || changedProperties.has('_activeTab')) {
+    if (
+      changedProperties.has('_config') ||
+      changedProperties.has('_activeTab') ||
+      changedProperties.has('_historyData')
+    ) {
       return true;
     }
 
