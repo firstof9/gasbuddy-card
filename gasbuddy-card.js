@@ -487,7 +487,7 @@ function e(e,t,s,i){var a,r=arguments.length,n=r<3?t:null===i?i=Object.getOwnPro
             </div>
           </div>
           <div
-            class="brand-logo ${"ev"===n&&s.ev_network?"brand-network":l?"":"brand-logo--icon"}"
+            class="brand-logo ${"ev"===n&&s.ev_network?"brand-network":_?"":"brand-logo--icon"}"
             aria-hidden="true"
           >
             ${"ev"===n&&s.ev_network?function(e){const t=fe(e);return t?t.svgPath?B`
