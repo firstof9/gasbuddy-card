@@ -124,6 +124,16 @@ export const cardStyles = css`
     line-height: 1;
   }
 
+  /* When the brand slot is just a generic icon (no station-brand image),
+     drop the white card framing — it clashes in dark themes. */
+  .brand-logo--icon {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    min-width: 0;
+    padding: 0;
+  }
+
   /* Mode Switcher Tabs */
   .tabs {
     display: flex;
