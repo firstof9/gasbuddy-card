@@ -12,6 +12,7 @@ import {
   formatTimestamp,
   generateSparklinePaths,
   computePriceTrend,
+  getSparklineExtremes,
   type HistoryPoint,
   type PriceTrend,
 } from './helpers.js';
@@ -607,6 +608,7 @@ export class GasBuddyCard extends LitElement {
     }
 
     const gradId = `grad-${entityId.replace(/\./g, '-')}`;
+    const extremes = getSparklineExtremes(history);
 
     return html`
       <svg
@@ -624,6 +626,22 @@ export class GasBuddyCard extends LitElement {
         </defs>
         <path d="${fill}" fill="url(#${gradId})" />
         <path d="${stroke}" fill="none" stroke="var(--accent-color)" stroke-width="1" />
+        ${extremes
+          ? html`
+              <circle
+                class="trend-extreme trend-extreme--min"
+                cx="${extremes.min.x.toFixed(2)}"
+                cy="${extremes.min.y.toFixed(2)}"
+                r="1.4"
+              ></circle>
+              <circle
+                class="trend-extreme trend-extreme--max"
+                cx="${extremes.max.x.toFixed(2)}"
+                cy="${extremes.max.y.toFixed(2)}"
+                r="1.4"
+              ></circle>
+            `
+          : ''}
       </svg>
     `;
   }

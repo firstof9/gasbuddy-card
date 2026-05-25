@@ -228,6 +228,16 @@ export const cardStyles = css`
     z-index: 0;
   }
 
+  /* Min/max markers on the trend background. Same theme tokens as the
+     trend-indicator chip so colors stay consistent across the card. */
+  .trend-extreme--min {
+    fill: var(--success-color, #43a047);
+  }
+
+  .trend-extreme--max {
+    fill: var(--error-color, #db4437);
+  }
+
   .fuel-type {
     font-size: 12px;
     font-weight: 600;
