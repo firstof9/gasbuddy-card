@@ -140,6 +140,13 @@ export class GasBuddyCard extends LitElement {
     if (hasGas && hasEV) size += 1;
     // gas grid: ~2 cards per row on a sections view, so half-units per grade
     if (hasGas) size += Math.max(1, Math.ceil(activeGasGrades / 2));
+    // The inline trend chip (▲ 2.1%) adds ~16px to each gas tile when
+    // enabled. With grid rows of ~2 tiles, that's ~ceil(grades / 2) * 16px,
+    // roughly a third of a size unit per visible row. Round up so taller
+    // cards don't get squished in a sections view.
+    if (hasGas && this._config.show_trend_indicator) {
+      size += Math.ceil(Math.ceil(activeGasGrades / 2) / 3);
+    }
     // ev section: charger summary + connectors grid + metadata list
     if (hasEV) size += 3;
 
