@@ -931,45 +931,44 @@ export class GasBuddyCard extends LitElement {
             >
               ${this._renderTrendGraph(actionEntityId)}
               <div class="price-card-content" aria-hidden="true">
-                <div class="fuel-type">${grade.name}</div>
                 ${hasMainPrice
                   ? (hasBothMain
                       ? html`
+                          <div class="price-card-header">
+                            <span class="fuel-type">${grade.name}</span>
+                            ${this._renderTrendIndicator(creditEntityId)}
+                          </div>
                           <div class="dual-prices">
                             <div class="price-col">
-                              <div class="fuel-price-wrapper">
-                                <span class="fuel-price">${creditPriceStr}</span>
-                                ${this._renderTrendIndicator(creditEntityId)}
-                              </div>
+                              <span class="fuel-price">${creditPriceStr}</span>
                               <span class="price-label">${t(this.hass, 'price_credit')}</span>
                             </div>
                             <div class="price-col">
-                              <div class="fuel-price-wrapper">
-                                <span class="fuel-price">${cashPriceStr}</span>
-                                ${this._renderTrendIndicator(cashEntityId)}
-                              </div>
+                              <span class="fuel-price">${cashPriceStr}</span>
                               <span class="price-label">${t(this.hass, 'price_cash')}</span>
                             </div>
                           </div>
+                          <div class="price-meta">${unit || 'USD'}</div>
+                          ${showPill ? html`<div class="deal-badge">${t(this.hass, 'price_deal')}: ${dealPriceStr}</div>` : ''}
                         `
                       : html`
-                          <div class="fuel-price-wrapper">
-                            <span class="fuel-price">${displayPrice}</span>
+                          <div class="price-card-header">
+                            <span class="fuel-type">${grade.name}</span>
                             ${this._renderTrendIndicator(creditEntityId || cashEntityId)}
                           </div>
-                          <div class="price-label">${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')}</div>
+                          <span class="fuel-price">${displayPrice}</span>
+                          <div class="price-meta">${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')} · ${unit || 'USD'}</div>
+                          ${showPill ? html`<div class="deal-badge">${t(this.hass, 'price_deal')}: ${dealPriceStr}</div>` : ''}
                         `)
                   : html`
-                      <div class="fuel-price-wrapper">
-                        <span class="fuel-price">${displayPrice}</span>
+                      <div class="price-card-header">
+                        <span class="fuel-type">${grade.name}</span>
                         ${this._renderTrendIndicator(dealEntityId)}
                       </div>
-                      <div class="price-label">${t(this.hass, 'price_deal')}</div>
+                      <span class="fuel-price">${displayPrice}</span>
+                      <div class="price-meta">${t(this.hass, 'price_deal')} · ${unit || 'USD'}</div>
+                      ${showPill ? html`<div class="deal-badge">${t(this.hass, 'price_deal')}: ${dealPriceStr}</div>` : ''}
                     `}
-                ${showPill ? html`<div class="deal-badge">${t(this.hass, 'price_deal')}: ${dealPriceStr}</div>` : ''}
-                <div class="fuel-meta">
-                  <span>${unit || 'USD'}</span>
-                </div>
               </div>
               ${this._renderTrendTooltip(actionEntityId, creditUnit || dealUnit, cashUnit)}
             </div>
