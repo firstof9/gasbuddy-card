@@ -353,7 +353,8 @@ export const cardStyles = css`
   }
 
   .price-col .fuel-price {
-    font-size: 18px;
+    font-size: 20px;
+    margin: 2px 0;
   }
 
   .deal-badge {
