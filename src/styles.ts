@@ -251,9 +251,9 @@ export const cardStyles = css`
     height: 100%;
     pointer-events: none;
     z-index: 0;
-    opacity: 0.65;
-    mask-image: linear-gradient(180deg, transparent 0%, transparent 50%, #000 100%);
-    -webkit-mask-image: linear-gradient(180deg, transparent 0%, transparent 50%, #000 100%);
+    opacity: 0.7;
+    mask-image: linear-gradient(180deg, transparent 0%, #000 70%);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 70%);
   }
 
   /* Min/max markers on the trend background. Same theme tokens as the
