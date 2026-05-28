@@ -192,6 +192,7 @@ export const cardStyles = css`
   .price-card {
     background: var(--ha-card-background, var(--card-background-color, rgba(255, 255, 255, 0.05)));
     border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color, rgba(0, 0, 0, 0.12)));
+    border-top: 3px solid var(--gasbuddy-brand-color, var(--accent-color));
     border-radius: var(--ha-card-border-radius, 12px);
     padding: 12px;
     text-align: center;
