@@ -39,6 +39,7 @@ const EN = {
   // Price labels
   price_credit: 'Credit',
   price_cash: 'Cash',
+  price_deal: 'Deal',
 
   // EV charger levels
   charger_level1: 'Level 1',
