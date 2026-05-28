@@ -51,8 +51,8 @@ export const cardStyles = css`
   .subtitle {
     font-size: 12px;
     color: var(--secondary-text-color);
-    margin-top: 4px;
-    line-height: 1.3;
+    margin-top: 6px;
+    line-height: 1.4;
   }
 
   .title-link {
@@ -87,8 +87,9 @@ export const cardStyles = css`
     min-width: 40px;
     max-width: 80px;
     border-radius: 6px;
-    background: white;
-    box-shadow: var(--ha-card-box-shadow, 0 2px 4px rgba(0,0,0,0.1));
+    background: var(--gasbuddy-brand-logo-bg, white);
+    box-shadow: var(--gasbuddy-brand-logo-shadow, var(--ha-card-box-shadow, 0 2px 4px rgba(0,0,0,0.1)));
+    border: 1px solid var(--gasbuddy-brand-logo-border, transparent);
     margin-left: 12px;
     flex-shrink: 0;
     display: flex;
@@ -192,6 +193,7 @@ export const cardStyles = css`
   .price-card {
     background: var(--ha-card-background, var(--card-background-color, rgba(255, 255, 255, 0.05)));
     border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color, rgba(0, 0, 0, 0.12)));
+    border-top: 3px solid var(--gasbuddy-brand-color, var(--accent-color));
     border-radius: var(--ha-card-border-radius, 12px);
     padding: 12px;
     text-align: center;
@@ -221,6 +223,16 @@ export const cardStyles = css`
     outline-offset: 2px;
   }
 
+  .price-card-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
   .price-card-content {
     position: relative;
     z-index: 1;
@@ -239,6 +251,9 @@ export const cardStyles = css`
     height: 100%;
     pointer-events: none;
     z-index: 0;
+    opacity: 0.65;
+    mask-image: linear-gradient(180deg, transparent 0%, transparent 50%, #000 100%);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, transparent 50%, #000 100%);
   }
 
   /* Min/max markers on the trend background. Same theme tokens as the
@@ -299,41 +314,29 @@ export const cardStyles = css`
   }
 
   .fuel-type {
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--primary-text-color);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-    align-self: center;
-    padding: 1px 10px;
+    letter-spacing: 0.6px;
+    padding: 2px 8px;
     border-radius: 999px;
     background: rgba(128, 128, 128, 0.18);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(128, 128, 128, 0.22);
-  }
-
-  .fuel-price-wrapper {
-    margin: 6px auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    background: rgba(128, 128, 128, 0.15);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(128, 128, 128, 0.2);
+    line-height: 1.2;
   }
 
   .fuel-price {
-    font-size: 24px;
-    font-weight: 700;
+    font-size: 34px;
+    font-weight: 600;
     color: var(--primary-text-color);
-    display: inline-block;
-    line-height: 1.2;
+    letter-spacing: -1px;
+    line-height: 1;
+    text-align: center;
+    margin: 6px 0 4px;
+    display: block;
   }
 
   .dual-prices {
@@ -350,14 +353,9 @@ export const cardStyles = css`
     align-items: center;
   }
 
-  .price-col .fuel-price-wrapper {
-    margin: 0;
-    gap: 6px;
-    padding: 2px 8px;
-  }
-
   .price-col .fuel-price {
-    font-size: 18px;
+    font-size: 20px;
+    margin: 2px 0;
   }
 
   .deal-badge {
@@ -385,13 +383,15 @@ export const cardStyles = css`
     margin-top: 2px;
   }
 
-  .fuel-meta {
-    font-size: 10px;
+  .price-meta {
+    position: relative;
+    z-index: 1;
+    font-size: 9px;
+    text-align: center;
     color: var(--secondary-text-color);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
   }
 
   .trend-indicator {
@@ -448,6 +448,7 @@ export const cardStyles = css`
     gap: 12px;
     background: var(--card-background-color, var(--ha-card-background, #fff));
     border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+    border-top: 3px solid var(--gasbuddy-brand-color, var(--accent-color));
     border-radius: 12px;
     padding: 12px;
   }
@@ -503,8 +504,9 @@ export const cardStyles = css`
   }
 
   .connector-name {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
+    letter-spacing: 0.3px;
   }
 
   .connector-details {
@@ -522,6 +524,7 @@ export const cardStyles = css`
   .connector-power {
     font-size: 10px;
     color: var(--secondary-text-color);
+    letter-spacing: 0.2px;
   }
 
   /* EV Metadata List */
@@ -583,6 +586,21 @@ export const cardStyles = css`
     gap: 4px;
   }
 
+  .last-updated-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+    background: transparent;
+    line-height: 1.2;
+  }
+
+  .last-updated-chip ha-icon {
+    --mdc-icon-size: 12px;
+  }
+
   /* Payment Card Badges */
   .payment-icons-container {
     display: flex;
@@ -608,6 +626,14 @@ export const cardStyles = css`
     }
     .gas-grid {
       grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .brand-logo:not(.brand-logo--icon):not(.brand-network) {
+      --gasbuddy-brand-logo-bg: transparent;
+      --gasbuddy-brand-logo-shadow: none;
+      --gasbuddy-brand-logo-border: var(--divider-color, rgba(255, 255, 255, 0.12));
     }
   }
 `;

@@ -55,6 +55,10 @@ const EN = {
   meta_payments: 'Payments',
   meta_last_confirmed: 'Last Confirmed',
 
+  // Trend chip duration suffix
+  trend_window_hours: 'h',
+  trend_window_days: 'd',
+
   // Footer
   updated_prefix: 'Updated:',
   updated_recent: 'Recent',

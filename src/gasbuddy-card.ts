@@ -5,6 +5,7 @@ import { runAction, type ActionContext } from './actions.js';
 import { cardStyles } from './styles.js';
 import {
   findDeviceEntities,
+  getNetworkBrand,
   getNetworkColor,
   getNetworkLogo,
   getPaymentIcons,
@@ -15,6 +16,7 @@ import {
   computePriceTrend,
   getSparklineExtremes,
   findNearestSparklinePoint,
+  formatTrendWindow,
   type HistoryPoint,
   type PriceTrend,
   type SparklinePointAt,
@@ -716,8 +718,10 @@ export class GasBuddyCard extends LitElement {
         ${lastUpdatedEntityId
           ? html`
               <div class="last-updated">
-                <ha-icon icon="mdi:clock-outline" aria-hidden="true"></ha-icon>
-                <span>${t(this.hass, 'updated_prefix')} ${formatTimestamp(this.hass!.states[lastUpdatedEntityId]?.state)}</span>
+                <span class="last-updated-chip">
+                  <ha-icon icon="mdi:clock-outline" aria-hidden="true"></ha-icon>
+                  <span>${t(this.hass, 'updated_prefix')} ${formatTimestamp(this.hass!.states[lastUpdatedEntityId]?.state)}</span>
+                </span>
               </div>
             `
           : ''}
@@ -746,6 +750,7 @@ export class GasBuddyCard extends LitElement {
         ? 'mdi:arrow-down-thin'
         : 'mdi:approximately-equal';
     const percentText = trend.direction === 'flat' ? '' : `${trend.percent.toFixed(1)}%`;
+    const windowText = formatTrendWindow(this.hass, Math.round(trend.hoursCompared));
     const ariaLabel =
       trend.direction === 'flat'
         ? `Price unchanged over the last ${Math.round(trend.hoursCompared)} hours`
@@ -753,7 +758,7 @@ export class GasBuddyCard extends LitElement {
     return html`
       <span class="trend-indicator trend-indicator--${trend.direction}" aria-label="${ariaLabel}">
         <ha-icon class="trend-indicator-icon" icon="${icon}" aria-hidden="true"></ha-icon>
-        ${percentText ? html`<span aria-hidden="true">${percentText}</span>` : ''}
+        ${(percentText || windowText) ? html`<span aria-hidden="true">${percentText}${windowText}</span>` : ''}
       </span>
     `;
   }
@@ -931,45 +936,44 @@ export class GasBuddyCard extends LitElement {
             >
               ${this._renderTrendGraph(actionEntityId)}
               <div class="price-card-content" aria-hidden="true">
-                <div class="fuel-type">${grade.name}</div>
                 ${hasMainPrice
                   ? (hasBothMain
                       ? html`
+                          <div class="price-card-header">
+                            <span class="fuel-type">${grade.name}</span>
+                            ${this._renderTrendIndicator(creditEntityId)}
+                          </div>
                           <div class="dual-prices">
                             <div class="price-col">
-                              <div class="fuel-price-wrapper">
-                                <span class="fuel-price">${creditPriceStr}</span>
-                                ${this._renderTrendIndicator(creditEntityId)}
-                              </div>
+                              <span class="fuel-price">${creditPriceStr}</span>
                               <span class="price-label">${t(this.hass, 'price_credit')}</span>
                             </div>
                             <div class="price-col">
-                              <div class="fuel-price-wrapper">
-                                <span class="fuel-price">${cashPriceStr}</span>
-                                ${this._renderTrendIndicator(cashEntityId)}
-                              </div>
+                              <span class="fuel-price">${cashPriceStr}</span>
                               <span class="price-label">${t(this.hass, 'price_cash')}</span>
                             </div>
                           </div>
+                          <div class="price-meta">${unit || 'USD'}</div>
+                          ${showPill ? html`<div class="deal-badge">${t(this.hass, 'price_deal')}: ${dealPriceStr}</div>` : ''}
                         `
                       : html`
-                          <div class="fuel-price-wrapper">
-                            <span class="fuel-price">${displayPrice}</span>
+                          <div class="price-card-header">
+                            <span class="fuel-type">${grade.name}</span>
                             ${this._renderTrendIndicator(creditEntityId || cashEntityId)}
                           </div>
-                          <div class="price-label">${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')}</div>
+                          <span class="fuel-price">${displayPrice}</span>
+                          <div class="price-meta">${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')} · ${unit || 'USD'}</div>
+                          ${showPill ? html`<div class="deal-badge">${t(this.hass, 'price_deal')}: ${dealPriceStr}</div>` : ''}
                         `)
                   : html`
-                      <div class="fuel-price-wrapper">
-                        <span class="fuel-price">${displayPrice}</span>
+                      <div class="price-card-header">
+                        <span class="fuel-type">${grade.name}</span>
                         ${this._renderTrendIndicator(dealEntityId)}
                       </div>
-                      <div class="price-label">${t(this.hass, 'price_deal')}</div>
+                      <span class="fuel-price">${displayPrice}</span>
+                      <div class="price-meta">${t(this.hass, 'price_deal')} · ${unit || 'USD'}</div>
+                      ${showPill ? html`<div class="deal-badge">${t(this.hass, 'price_deal')}: ${dealPriceStr}</div>` : ''}
                     `}
-                ${showPill ? html`<div class="deal-badge">${t(this.hass, 'price_deal')}: ${dealPriceStr}</div>` : ''}
-                <div class="fuel-meta">
-                  <span>${unit || 'USD'}</span>
-                </div>
               </div>
               ${this._renderTrendTooltip(actionEntityId, creditUnit || dealUnit, cashUnit)}
             </div>
@@ -980,8 +984,12 @@ export class GasBuddyCard extends LitElement {
   }
 
   private _renderEVContent(entities: ResolvedEntities): TemplateResult {
+    const networkName = entities.ev_network
+      ? (this.hass!.states[entities.ev_network]?.state as string) || ''
+      : '';
+    const brandColor = networkName ? getNetworkBrand(networkName)?.color ?? '' : '';
     return html`
-      <div class="ev-section">
+      <div class="ev-section" style=${brandColor ? `--gasbuddy-brand-color: ${brandColor};` : ''}>
         ${this._renderChargerSummary(entities)}
         ${this._renderConnectors(entities)}
         ${this._renderEVMetadata(entities)}
