@@ -221,6 +221,16 @@ export const cardStyles = css`
     outline-offset: 2px;
   }
 
+  .price-card-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
   .price-card-content {
     position: relative;
     z-index: 1;
@@ -299,41 +309,29 @@ export const cardStyles = css`
   }
 
   .fuel-type {
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--primary-text-color);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-    align-self: center;
-    padding: 1px 10px;
+    letter-spacing: 0.6px;
+    padding: 2px 8px;
     border-radius: 999px;
     background: rgba(128, 128, 128, 0.18);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(128, 128, 128, 0.22);
-  }
-
-  .fuel-price-wrapper {
-    margin: 6px auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    background: rgba(128, 128, 128, 0.15);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(128, 128, 128, 0.2);
+    line-height: 1.2;
   }
 
   .fuel-price {
-    font-size: 24px;
-    font-weight: 700;
+    font-size: 34px;
+    font-weight: 600;
     color: var(--primary-text-color);
-    display: inline-block;
-    line-height: 1.2;
+    letter-spacing: -1px;
+    line-height: 1;
+    text-align: center;
+    margin: 6px 0 4px;
+    display: block;
   }
 
   .dual-prices {
@@ -348,12 +346,6 @@ export const cardStyles = css`
     display: flex;
     flex-direction: column;
     align-items: center;
-  }
-
-  .price-col .fuel-price-wrapper {
-    margin: 0;
-    gap: 6px;
-    padding: 2px 8px;
   }
 
   .price-col .fuel-price {
@@ -385,13 +377,15 @@ export const cardStyles = css`
     margin-top: 2px;
   }
 
-  .fuel-meta {
-    font-size: 10px;
+  .price-meta {
+    position: relative;
+    z-index: 1;
+    font-size: 9px;
+    text-align: center;
     color: var(--secondary-text-color);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
   }
 
   .trend-indicator {
