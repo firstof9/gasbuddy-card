@@ -4,6 +4,7 @@ import {
   formatDistance,
   formatPrice,
   formatTimestamp,
+  formatTrendWindow,
   getNetworkColor,
   getPaymentIcons,
   generateSparklinePaths,
@@ -56,6 +57,32 @@ describe('formatDistance', () => {
 
   it('passes through non-numeric strings', () => {
     expect(formatDistance('abc')).toBe('abc');
+  });
+});
+
+describe('formatTrendWindow', () => {
+  it('renders whole-day multiples as days (168h → " · 7d")', () => {
+    expect(formatTrendWindow(buildHass(), 168)).toBe(' · 7d');
+  });
+
+  it('renders 24h as " · 1d"', () => {
+    expect(formatTrendWindow(buildHass(), 24)).toBe(' · 1d');
+  });
+
+  it('renders non-day-multiple hours as hours (6h → " · 6h")', () => {
+    expect(formatTrendWindow(buildHass(), 6)).toBe(' · 6h');
+  });
+
+  it('renders non-day-multiple hours as hours (36h → " · 36h")', () => {
+    expect(formatTrendWindow(buildHass(), 36)).toBe(' · 36h');
+  });
+
+  it('returns empty string for zero hours', () => {
+    expect(formatTrendWindow(buildHass(), 0)).toBe('');
+  });
+
+  it('returns empty string for negative hours', () => {
+    expect(formatTrendWindow(buildHass(), -1)).toBe('');
   });
 });
 

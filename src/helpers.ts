@@ -1,5 +1,6 @@
 import { html, type TemplateResult } from 'lit';
 import type { HomeAssistant } from './types.js';
+import { t } from './i18n.js';
 
 // Suffix → config-key map. Module-scoped so it's allocated once, not per call.
 const ENTITY_SUFFIXES: ReadonlyArray<readonly [string, readonly string[]]> = [
@@ -243,6 +244,19 @@ export function formatDistance(distanceMiles: unknown, hass?: HomeAssistant): st
     return `${km.toFixed(1)} km`;
   }
   return `${miles.toFixed(1)} mi`;
+}
+
+/**
+ * Returns a duration suffix for the trend chip text (e.g. " · 7d", " · 6h").
+ * Whole-day multiples render as days; other positive values render as hours.
+ * Zero or negative returns an empty string so the chip text is unchanged.
+ */
+export function formatTrendWindow(hass: HomeAssistant | undefined, hours: number): string {
+  if (hours <= 0) return '';
+  const isWholeDays = hours % 24 === 0;
+  const value = isWholeDays ? hours / 24 : hours;
+  const unit = isWholeDays ? t(hass, 'trend_window_days') : t(hass, 'trend_window_hours');
+  return t(hass, 'trend_window_suffix').replace('{value}', String(value)).replace('{unit}', unit);
 }
 
 /**
