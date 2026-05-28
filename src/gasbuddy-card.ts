@@ -15,6 +15,7 @@ import {
   computePriceTrend,
   getSparklineExtremes,
   findNearestSparklinePoint,
+  formatTrendWindow,
   type HistoryPoint,
   type PriceTrend,
   type SparklinePointAt,
@@ -746,6 +747,7 @@ export class GasBuddyCard extends LitElement {
         ? 'mdi:arrow-down-thin'
         : 'mdi:approximately-equal';
     const percentText = trend.direction === 'flat' ? '' : `${trend.percent.toFixed(1)}%`;
+    const windowText = formatTrendWindow(this.hass, Math.round(trend.hoursCompared));
     const ariaLabel =
       trend.direction === 'flat'
         ? `Price unchanged over the last ${Math.round(trend.hoursCompared)} hours`
@@ -753,7 +755,7 @@ export class GasBuddyCard extends LitElement {
     return html`
       <span class="trend-indicator trend-indicator--${trend.direction}" aria-label="${ariaLabel}">
         <ha-icon class="trend-indicator-icon" icon="${icon}" aria-hidden="true"></ha-icon>
-        ${percentText ? html`<span aria-hidden="true">${percentText}</span>` : ''}
+        ${(percentText || windowText) ? html`<span aria-hidden="true">${percentText}${windowText}</span>` : ''}
       </span>
     `;
   }
