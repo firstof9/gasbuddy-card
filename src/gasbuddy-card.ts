@@ -718,8 +718,10 @@ export class GasBuddyCard extends LitElement {
         ${lastUpdatedEntityId
           ? html`
               <div class="last-updated">
-                <ha-icon icon="mdi:clock-outline" aria-hidden="true"></ha-icon>
-                <span>${t(this.hass, 'updated_prefix')} ${formatTimestamp(this.hass!.states[lastUpdatedEntityId]?.state)}</span>
+                <span class="last-updated-chip">
+                  <ha-icon icon="mdi:clock-outline" aria-hidden="true"></ha-icon>
+                  <span>${t(this.hass, 'updated_prefix')} ${formatTimestamp(this.hass!.states[lastUpdatedEntityId]?.state)}</span>
+                </span>
               </div>
             `
           : ''}

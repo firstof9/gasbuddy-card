@@ -51,8 +51,8 @@ export const cardStyles = css`
   .subtitle {
     font-size: 12px;
     color: var(--secondary-text-color);
-    margin-top: 4px;
-    line-height: 1.3;
+    margin-top: 6px;
+    line-height: 1.4;
   }
 
   .title-link {
@@ -584,6 +584,21 @@ export const cardStyles = css`
     display: flex;
     align-items: center;
     gap: 4px;
+  }
+
+  .last-updated-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+    background: transparent;
+    line-height: 1.2;
+  }
+
+  .last-updated-chip ha-icon {
+    --mdc-icon-size: 12px;
   }
 
   /* Payment Card Badges */
