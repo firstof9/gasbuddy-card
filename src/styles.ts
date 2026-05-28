@@ -87,8 +87,9 @@ export const cardStyles = css`
     min-width: 40px;
     max-width: 80px;
     border-radius: 6px;
-    background: white;
-    box-shadow: var(--ha-card-box-shadow, 0 2px 4px rgba(0,0,0,0.1));
+    background: var(--gasbuddy-brand-logo-bg, white);
+    box-shadow: var(--gasbuddy-brand-logo-shadow, var(--ha-card-box-shadow, 0 2px 4px rgba(0,0,0,0.1)));
+    border: 1px solid var(--gasbuddy-brand-logo-border, transparent);
     margin-left: 12px;
     flex-shrink: 0;
     display: flex;
@@ -610,6 +611,14 @@ export const cardStyles = css`
     }
     .gas-grid {
       grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .brand-logo:not(.brand-logo--icon):not(.brand-network) {
+      --gasbuddy-brand-logo-bg: transparent;
+      --gasbuddy-brand-logo-shadow: none;
+      --gasbuddy-brand-logo-border: var(--divider-color, rgba(255, 255, 255, 0.12));
     }
   }
 `;
