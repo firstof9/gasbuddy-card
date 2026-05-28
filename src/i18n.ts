@@ -56,7 +56,6 @@ const EN = {
   meta_last_confirmed: 'Last Confirmed',
 
   // Trend chip duration suffix
-  trend_window_suffix: ' · {value}{unit}',
   trend_window_hours: 'h',
   trend_window_days: 'd',
 

@@ -246,17 +246,12 @@ export function formatDistance(distanceMiles: unknown, hass?: HomeAssistant): st
   return `${miles.toFixed(1)} mi`;
 }
 
-/**
- * Returns a duration suffix for the trend chip text (e.g. " · 7d", " · 6h").
- * Whole-day multiples render as days; other positive values render as hours.
- * Zero or negative returns an empty string so the chip text is unchanged.
- */
 export function formatTrendWindow(hass: HomeAssistant | undefined, hours: number): string {
   if (hours <= 0) return '';
   const isWholeDays = hours % 24 === 0;
   const value = isWholeDays ? hours / 24 : hours;
   const unit = isWholeDays ? t(hass, 'trend_window_days') : t(hass, 'trend_window_hours');
-  return t(hass, 'trend_window_suffix').replace('{value}', String(value)).replace('{unit}', unit);
+  return ` · ${value}${unit}`;
 }
 
 /**

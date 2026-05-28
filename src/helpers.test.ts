@@ -61,19 +61,19 @@ describe('formatDistance', () => {
 });
 
 describe('formatTrendWindow', () => {
-  it('renders whole-day multiples as days (168h → " · 7d")', () => {
+  it('renders whole-day multiples as days', () => {
     expect(formatTrendWindow(buildHass(), 168)).toBe(' · 7d');
   });
 
-  it('renders 24h as " · 1d"', () => {
+  it('renders exactly 24h as one day', () => {
     expect(formatTrendWindow(buildHass(), 24)).toBe(' · 1d');
   });
 
-  it('renders non-day-multiple hours as hours (6h → " · 6h")', () => {
+  it('renders a sub-day hour count as hours', () => {
     expect(formatTrendWindow(buildHass(), 6)).toBe(' · 6h');
   });
 
-  it('renders non-day-multiple hours as hours (36h → " · 36h")', () => {
+  it('renders a non-day-multiple multi-day hour count as hours', () => {
     expect(formatTrendWindow(buildHass(), 36)).toBe(' · 36h');
   });
 
