@@ -83,10 +83,16 @@ export interface GasBuddyCardConfig {
   midgrade_gas_cash_entity?: string;
   premium_gas_cash_entity?: string;
   diesel_cash_entity?: string;
+  regular_gas_deal_entity?: string;
+  midgrade_gas_deal_entity?: string;
+  premium_gas_deal_entity?: string;
+  diesel_deal_entity?: string;
   e85_entity?: string;
   e85_cash_entity?: string;
+  e85_deal_entity?: string;
   e15_entity?: string;
   e15_cash_entity?: string;
+  e15_deal_entity?: string;
   last_updated_entity?: string;
 
   // EV charging overrides

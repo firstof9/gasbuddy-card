@@ -8,13 +8,19 @@ const ENTITY_SUFFIXES: ReadonlyArray<readonly [string, readonly string[]]> = [
   ['premium_gas', ['_premium_gas']],
   ['diesel', ['_diesel']],
   ['regular_gas_cash', ['_regular_gas_cash']],
+  ['regular_gas_deal', ['_regular_gas_deal']],
   ['midgrade_gas_cash', ['_midgrade_gas_cash']],
+  ['midgrade_gas_deal', ['_midgrade_gas_deal']],
   ['premium_gas_cash', ['_premium_gas_cash']],
+  ['premium_gas_deal', ['_premium_gas_deal']],
   ['diesel_cash', ['_diesel_cash']],
+  ['diesel_deal', ['_diesel_deal']],
   ['e85', ['_e85']],
   ['e85_cash', ['_e85_cash']],
+  ['e85_deal', ['_e85_deal']],
   ['e15', ['_unl88', '_e15_gas', '_e15']],
   ['e15_cash', ['_unl88_cash', '_e15_gas_cash', '_e15_cash']],
+  ['e15_deal', ['_unl88_deal', '_e15_gas_deal', '_e15_deal']],
   ['last_updated', ['_last_updated']],
   ['ev_level1', ['_ev_level_1_chargers', '_ev_level1']],
   ['ev_level2', ['_ev_level_2_chargers', '_ev_level2']],
@@ -513,6 +519,9 @@ export function generateSparklinePaths(
     return { stroke: '', fill: '' };
   }
 
+  // Sort points chronologically to guarantee left-to-right drawing and correct curve calculations
+  points.sort((a, b) => a.time - b.time);
+
   // If there's only 1 point, make a flat line spanning across
   if (points.length === 1) {
     const y = (minY + maxY) / 2;
@@ -551,7 +560,45 @@ export function generateSparklinePaths(
     return { x, y };
   });
 
-  const strokeSegments = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)},${c.y.toFixed(1)}`);
+  const strokeSegments: string[] = [];
+  strokeSegments.push(`M ${coords[0].x.toFixed(1)},${coords[0].y.toFixed(1)}`);
+
+  const controlPoint = (
+    current: { x: number; y: number },
+    previous: { x: number; y: number } | undefined,
+    next: { x: number; y: number } | undefined,
+    isEnd: boolean,
+  ) => {
+    const p = previous || current;
+    const n = next || current;
+    
+    // Angle of the tangent is determined by the vector from previous to next
+    const tangentX = n.x - p.x;
+    const tangentY = n.y - p.y;
+    const angle = Math.atan2(tangentY, tangentX);
+    
+    // Distance is calculated from the adjacent point in the current segment
+    const adjacent = isEnd ? p : n;
+    const dx = adjacent.x - current.x;
+    const dy = adjacent.y - current.y;
+    const segmentLength = Math.sqrt(dx * dx + dy * dy);
+    
+    const smoothing = 0.2;
+    const dist = segmentLength * smoothing;
+    
+    const cx = current.x + Math.cos(angle + (isEnd ? Math.PI : 0)) * dist;
+    const cy = current.y + Math.sin(angle + (isEnd ? Math.PI : 0)) * dist;
+    return { x: cx, y: cy };
+  };
+
+  for (let i = 0; i < coords.length - 1; i++) {
+    const cp1 = controlPoint(coords[i], coords[i - 1], coords[i + 1], false);
+    const cp2 = controlPoint(coords[i + 1], coords[i], coords[i + 2], true);
+    strokeSegments.push(
+      `C ${cp1.x.toFixed(1)},${cp1.y.toFixed(1)} ${cp2.x.toFixed(1)},${cp2.y.toFixed(1)} ${coords[i + 1].x.toFixed(1)},${coords[i + 1].y.toFixed(1)}`
+    );
+  }
+
   const stroke = strokeSegments.join(' ');
 
   const firstX = coords[0].x.toFixed(1);

@@ -155,6 +155,18 @@ describe('findDeviceEntities', () => {
     expect(mapped.e15).toBe('sensor.x_unl88');
     expect(mapped.e15_cash).toBe('sensor.x_unl88_cash');
   });
+
+  it('handles the deal price variants', () => {
+    const hass = buildHass({
+      entities: {
+        'sensor.x_regular_gas_deal': { entity_id: 'sensor.x_regular_gas_deal', device_id: 'dev1' },
+        'sensor.x_unl88_deal': { entity_id: 'sensor.x_unl88_deal', device_id: 'dev1' },
+      },
+    });
+    const mapped = findDeviceEntities(hass, 'dev1');
+    expect(mapped.regular_gas_deal).toBe('sensor.x_regular_gas_deal');
+    expect(mapped.e15_deal).toBe('sensor.x_unl88_deal');
+  });
 });
 
 describe('getNetworkColor', () => {
@@ -229,8 +241,8 @@ describe('generateSparklinePaths', () => {
       { s: '3.50', t: 200 },
       { s: '3.50', t: 300 }
     ])).toEqual({
-      stroke: 'M 0.0,25.0 L 50.0,25.0 L 100.0,25.0',
-      fill: 'M 0.0,25.0 L 50.0,25.0 L 100.0,25.0 L 100.0,50 L 0.0,50 Z',
+      stroke: 'M 0.0,25.0 C 10.0,25.0 40.0,25.0 50.0,25.0 C 60.0,25.0 90.0,25.0 100.0,25.0',
+      fill: 'M 0.0,25.0 C 10.0,25.0 40.0,25.0 50.0,25.0 C 60.0,25.0 90.0,25.0 100.0,25.0 L 100.0,50 L 0.0,50 Z',
     });
   });
 
@@ -244,8 +256,8 @@ describe('generateSparklinePaths', () => {
     // Time diff is 2000. X maps 1000->0, 2000->50, 3000->100.
     // Price maps 3.00->40, 3.50->25, 4.00->10.
     expect(generateSparklinePaths(history)).toEqual({
-      stroke: 'M 0.0,40.0 L 50.0,25.0 L 100.0,10.0',
-      fill: 'M 0.0,40.0 L 50.0,25.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+      stroke: 'M 0.0,40.0 C 10.0,37.0 40.0,28.0 50.0,25.0 C 60.0,22.0 90.0,13.0 100.0,10.0',
+      fill: 'M 0.0,40.0 C 10.0,37.0 40.0,28.0 50.0,25.0 C 60.0,22.0 90.0,13.0 100.0,10.0 L 100.0,50 L 0.0,50 Z',
     });
   });
 
@@ -257,8 +269,8 @@ describe('generateSparklinePaths', () => {
     // 2026-05-24T20:00:00.000Z parsed to epoch seconds: 1779652800
     // 2026-05-24T21:00:00.000Z parsed to epoch seconds: 1779656400
     expect(generateSparklinePaths(history)).toEqual({
-      stroke: 'M 0.0,40.0 L 100.0,10.0',
-      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+      stroke: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0',
+      fill: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0 L 100.0,50 L 0.0,50 Z',
     });
   });
 
@@ -268,8 +280,8 @@ describe('generateSparklinePaths', () => {
       { s: '4.00', lu: 1716386400 }
     ];
     expect(generateSparklinePaths(history)).toEqual({
-      stroke: 'M 0.0,40.0 L 100.0,10.0',
-      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+      stroke: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0',
+      fill: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0 L 100.0,50 L 0.0,50 Z',
     });
   });
 
@@ -279,8 +291,8 @@ describe('generateSparklinePaths', () => {
       { s: '4.00', lc: 2000 },
     ];
     expect(generateSparklinePaths(history)).toEqual({
-      stroke: 'M 0.0,40.0 L 100.0,10.0',
-      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+      stroke: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0',
+      fill: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0 L 100.0,50 L 0.0,50 Z',
     });
   });
 
@@ -290,8 +302,8 @@ describe('generateSparklinePaths', () => {
       { state: '4.00', last_changed: '2026-05-24T21:00:00.000Z' },
     ];
     expect(generateSparklinePaths(history)).toEqual({
-      stroke: 'M 0.0,40.0 L 100.0,10.0',
-      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+      stroke: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0',
+      fill: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0 L 100.0,50 L 0.0,50 Z',
     });
   });
 
@@ -307,7 +319,7 @@ describe('generateSparklinePaths', () => {
     // Both map to x=0; values still differ so y splits.
     const result = generateSparklinePaths(history);
     expect(result.stroke.startsWith('M 0.0,')).toBe(true);
-    expect(result.stroke).toContain(' L 0.0,');
+    expect(result.stroke).toContain('C 0.0,');
   });
 
   it('parses numeric-string timestamps', () => {
@@ -316,8 +328,8 @@ describe('generateSparklinePaths', () => {
       { s: '4.00', t: '2000' as unknown as number },
     ];
     expect(generateSparklinePaths(history)).toEqual({
-      stroke: 'M 0.0,40.0 L 100.0,10.0',
-      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+      stroke: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0',
+      fill: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0 L 100.0,50 L 0.0,50 Z',
     });
   });
 
@@ -330,8 +342,8 @@ describe('generateSparklinePaths', () => {
     ];
     // Should behave as a 2-point line from the surviving entries.
     expect(generateSparklinePaths(history)).toEqual({
-      stroke: 'M 0.0,40.0 L 100.0,10.0',
-      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+      stroke: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0',
+      fill: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0 L 100.0,50 L 0.0,50 Z',
     });
   });
 
@@ -342,8 +354,8 @@ describe('generateSparklinePaths', () => {
     ];
     // minY=30, maxY=20 → Y range is 10; value 3 → 30, value 4 → 20.
     expect(generateSparklinePaths(history, 30, 20)).toEqual({
-      stroke: 'M 0.0,30.0 L 100.0,20.0',
-      fill: 'M 0.0,30.0 L 100.0,20.0 L 100.0,50 L 0.0,50 Z',
+      stroke: 'M 0.0,30.0 C 20.0,28.0 80.0,22.0 100.0,20.0',
+      fill: 'M 0.0,30.0 C 20.0,28.0 80.0,22.0 100.0,20.0 L 100.0,50 L 0.0,50 Z',
     });
   });
 
@@ -354,8 +366,8 @@ describe('generateSparklinePaths', () => {
     ];
     // (30 + 20) / 2 = 25
     expect(generateSparklinePaths(history, 30, 20)).toEqual({
-      stroke: 'M 0.0,25.0 L 100.0,25.0',
-      fill: 'M 0.0,25.0 L 100.0,25.0 L 100.0,50 L 0.0,50 Z',
+      stroke: 'M 0.0,25.0 C 20.0,25.0 80.0,25.0 100.0,25.0',
+      fill: 'M 0.0,25.0 C 20.0,25.0 80.0,25.0 100.0,25.0 L 100.0,50 L 0.0,50 Z',
     });
   });
 
@@ -365,22 +377,20 @@ describe('generateSparklinePaths', () => {
       { s: '4.00', t: 2000 },
     ];
     expect(generateSparklinePaths(history)).toEqual({
-      stroke: 'M 0.0,40.0 L 100.0,10.0',
-      fill: 'M 0.0,40.0 L 100.0,10.0 L 100.0,50 L 0.0,50 Z',
+      stroke: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0',
+      fill: 'M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0 L 100.0,50 L 0.0,50 Z',
     });
   });
 
   it('renders correctly when points are not sorted by time', () => {
     // The function uses min/max time, not array order, for X mapping.
-    // First point in the path is whichever appears first in the array.
+    // It sorts points chronologically first to guarantee left-to-right Bezier.
     const history = [
       { s: '4.00', t: 2000 },
       { s: '3.00', t: 1000 },
     ];
     const { stroke } = generateSparklinePaths(history);
-    // first point: t=2000 → max time → x=100, val=4 → y=10
-    // second point: t=1000 → min time → x=0, val=3 → y=40
-    expect(stroke).toBe('M 100.0,10.0 L 0.0,40.0');
+    expect(stroke).toBe('M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0');
   });
 });
 

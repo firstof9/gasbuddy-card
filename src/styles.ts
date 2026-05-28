@@ -301,17 +301,39 @@ export const cardStyles = css`
   .fuel-type {
     font-size: 12px;
     font-weight: 600;
-    color: var(--secondary-text-color);
+    color: var(--primary-text-color);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 4px;
+    align-self: center;
+    padding: 1px 10px;
+    border-radius: 999px;
+    background: rgba(128, 128, 128, 0.18);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(128, 128, 128, 0.22);
+  }
+
+  .fuel-price-wrapper {
+    margin: 6px auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(128, 128, 128, 0.15);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(128, 128, 128, 0.2);
   }
 
   .fuel-price {
     font-size: 24px;
     font-weight: 700;
     color: var(--primary-text-color);
-    margin: 6px 0;
+    display: inline-block;
+    line-height: 1.2;
   }
 
   .dual-prices {
@@ -328,9 +350,31 @@ export const cardStyles = css`
     align-items: center;
   }
 
+  .price-col .fuel-price-wrapper {
+    margin: 0;
+    gap: 6px;
+    padding: 2px 8px;
+  }
+
   .price-col .fuel-price {
     font-size: 18px;
-    margin: 0;
+  }
+
+  .deal-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--rgb-success-color, 76, 175, 80), 0.15);
+    color: var(--success-color, #4caf50);
+    border: 1px solid rgba(var(--rgb-success-color, 76, 175, 80), 0.3);
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    margin: 4px auto 0 auto;
+    width: fit-content;
+    line-height: 1.2;
+    z-index: 1;
   }
 
   .price-label {
@@ -355,26 +399,34 @@ export const cardStyles = css`
     align-items: center;
     justify-content: center;
     gap: 2px;
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 1;
-    margin: 2px 0;
-    color: var(--secondary-text-color);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.2;
+    padding: 2px 6px;
+    border-radius: 12px;
+    background: rgba(128, 128, 128, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
   }
 
   .trend-indicator-icon {
-    --mdc-icon-size: 14px;
+    --mdc-icon-size: 12px;
+    color: inherit;
   }
 
   /* Falling prices are good for the driver — use the theme's success hue.
      Rising prices use the error hue. Flat uses the neutral secondary text
      color set on .trend-indicator above. */
   .trend-indicator--down {
-    color: var(--success-color, #43a047);
+    background: var(--gasbuddy-trend-down-bg, rgba(46, 125, 50, 0.9));
+    color: var(--gasbuddy-trend-down-color, #ffffff);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   .trend-indicator--up {
-    color: var(--error-color, #db4437);
+    background: var(--gasbuddy-trend-up-bg, rgba(183, 28, 28, 0.9));
+    color: var(--gasbuddy-trend-up-color, #ffffff);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   /* EV Section Layout */
