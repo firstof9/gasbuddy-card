@@ -1,5 +1,6 @@
 import { html, type TemplateResult } from 'lit';
 import type { HomeAssistant } from './types.js';
+import { t } from './i18n.js';
 
 // Suffix → config-key map. Module-scoped so it's allocated once, not per call.
 const ENTITY_SUFFIXES: ReadonlyArray<readonly [string, readonly string[]]> = [
@@ -243,6 +244,14 @@ export function formatDistance(distanceMiles: unknown, hass?: HomeAssistant): st
     return `${km.toFixed(1)} km`;
   }
   return `${miles.toFixed(1)} mi`;
+}
+
+export function formatTrendWindow(hass: HomeAssistant | undefined, hours: number): string {
+  if (hours <= 0) return '';
+  const isWholeDays = hours % 24 === 0;
+  const value = isWholeDays ? hours / 24 : hours;
+  const unit = isWholeDays ? t(hass, 'trend_window_days') : t(hass, 'trend_window_hours');
+  return ` · ${value}${unit}`;
 }
 
 /**
