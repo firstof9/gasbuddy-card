@@ -447,6 +447,7 @@ export const cardStyles = css`
     gap: 12px;
     background: var(--card-background-color, var(--ha-card-background, #fff));
     border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+    border-top: 3px solid var(--gasbuddy-brand-color, var(--accent-color));
     border-radius: 12px;
     padding: 12px;
   }
@@ -502,8 +503,9 @@ export const cardStyles = css`
   }
 
   .connector-name {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
+    letter-spacing: 0.3px;
   }
 
   .connector-details {
@@ -521,6 +523,7 @@ export const cardStyles = css`
   .connector-power {
     font-size: 10px;
     color: var(--secondary-text-color);
+    letter-spacing: 0.2px;
   }
 
   /* EV Metadata List */

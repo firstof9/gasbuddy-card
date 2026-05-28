@@ -5,6 +5,7 @@ import { runAction, type ActionContext } from './actions.js';
 import { cardStyles } from './styles.js';
 import {
   findDeviceEntities,
+  getNetworkBrand,
   getNetworkColor,
   getNetworkLogo,
   getPaymentIcons,
@@ -981,8 +982,12 @@ export class GasBuddyCard extends LitElement {
   }
 
   private _renderEVContent(entities: ResolvedEntities): TemplateResult {
+    const networkName = entities.ev_network
+      ? (this.hass!.states[entities.ev_network]?.state as string) || ''
+      : '';
+    const brandColor = networkName ? getNetworkBrand(networkName)?.color ?? '' : '';
     return html`
-      <div class="ev-section">
+      <div class="ev-section" style=${brandColor ? `--gasbuddy-brand-color: ${brandColor};` : ''}>
         ${this._renderChargerSummary(entities)}
         ${this._renderConnectors(entities)}
         ${this._renderEVMetadata(entities)}
