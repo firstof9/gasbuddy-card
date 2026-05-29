@@ -521,6 +521,7 @@ export class GasBuddyCard extends LitElement {
       if (!address) {
         if (attrs.station_address) address = String(attrs.station_address);
         else if (attrs.street_address) address = String(attrs.street_address);
+        else if (attrs.address) address = String(attrs.address);
       }
       if (!distance && attrs.distance_miles !== undefined) {
         distance = formatDistance(attrs.distance_miles, this.hass);
