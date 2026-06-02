@@ -190,6 +190,15 @@ export const cardStyles = css`
     gap: 12px;
   }
 
+  .gas-grid.gas-grid--single {
+    grid-template-columns: 1fr;
+  }
+
+  .gas-grid--single .price-col .fuel-price {
+    font-size: 28px;
+    letter-spacing: -0.5px;
+  }
+
   .price-card {
     background: var(--ha-card-background, var(--card-background-color, rgba(255, 255, 255, 0.05)));
     border: var(--ha-card-border-width, 1px) solid var(--ha-card-border-color, var(--divider-color, rgba(0, 0, 0, 0.12)));

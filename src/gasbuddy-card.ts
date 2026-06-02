@@ -130,7 +130,10 @@ export class GasBuddyCard extends LitElement {
       return !!s && s.state !== 'unavailable' && s.state !== 'unknown';
     };
 
-    const gasGradeKeys = ['regular_gas', 'midgrade_gas', 'premium_gas', 'diesel', 'e15', 'e85'];
+    let gasGradeKeys = ['regular_gas', 'midgrade_gas', 'premium_gas', 'diesel', 'e15', 'e85'];
+    if (cfg.show_fuel_types && cfg.show_fuel_types.length > 0) {
+      gasGradeKeys = gasGradeKeys.filter((k) => cfg.show_fuel_types!.includes(k));
+    }
     const activeGasGrades = gasGradeKeys.filter(
       (k) => isActive(resolve(k)) || isActive(resolve(`${k}_cash`)) || isActive(resolve(`${k}_deal`)),
     ).length;
@@ -862,7 +865,7 @@ export class GasBuddyCard extends LitElement {
       { key: 'e85' as const, name: t(this.hass, 'grade_e85'), cashKey: 'e85_cash' as const, dealKey: 'e85_deal' as const },
     ];
 
-    const activeGrades = fuelGrades.filter((g) => {
+    let activeGrades = fuelGrades.filter((g) => {
       const creditState = entities[g.key] ? this.hass!.states[entities[g.key]!] : undefined;
       const cashState = entities[g.cashKey] ? this.hass!.states[entities[g.cashKey]!] : undefined;
       const dealState = entities[g.dealKey] ? this.hass!.states[entities[g.dealKey]!] : undefined;
@@ -870,8 +873,12 @@ export class GasBuddyCard extends LitElement {
       return ok(creditState) || ok(cashState) || ok(dealState);
     });
 
+    if (this._config?.show_fuel_types && this._config.show_fuel_types.length > 0) {
+      activeGrades = activeGrades.filter((g) => this._config!.show_fuel_types!.includes(g.key));
+    }
+
     return html`
-      <div class="gas-grid">
+      <div class="gas-grid ${activeGrades.length === 1 ? 'gas-grid--single' : ''}">
         ${activeGrades.map((grade) => {
           const creditEntityId = entities[grade.key];
           const cashEntityId = entities[grade.cashKey];
