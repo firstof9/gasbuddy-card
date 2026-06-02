@@ -67,6 +67,7 @@ export interface GasBuddyCardConfig {
   trend_hours?: number;
   show_trend_indicator?: boolean;
   trend_indicator_baseline_hours?: number;
+  show_fuel_types?: string[];
 
   // Configurable tap / hold actions on each price tile. Default tap_action
   // is `{ action: 'more-info' }` for the tile's primary sensor; default
