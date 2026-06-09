@@ -115,6 +115,12 @@ export class GasBuddyCardEditor extends LitElement {
         },
       },
       {
+        name: 'compact',
+        label: 'Compact Mode',
+        helper: 'Renders the card in a space-saving layout optimized for mobile dashboards.',
+        selector: { boolean: {} },
+      },
+      {
         name: 'show_fuel_types',
         label: 'Show Fuel Types',
         helper: 'Select which fuel types to display on the card (falls back to all active if none selected).',

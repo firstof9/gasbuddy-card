@@ -63,6 +63,7 @@ export interface GasBuddyCardConfig {
   device_id?: string;
   title?: string;
   default_mode?: 'gas' | 'ev';
+  compact?: boolean;
   show_trend?: boolean;
   trend_hours?: number;
   show_trend_indicator?: boolean;
