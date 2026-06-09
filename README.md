@@ -42,7 +42,7 @@ This card requires the **[GasBuddy custom integration](https://github.com/firsto
 1. Open HACS.
 2. Click on "Frontend".
 3. Click on the three dots in the top right corner and select "Custom repositories".
-4. Add `https://github.com/firstof9/gasbuddy-card` with category "Lovelace".
+4. Add `https://github.com/firstof9/gasbuddy-card` with category "Dashboard".
 5. Search for "GasBuddy Card" and click "Download".
 
 ### Manual
