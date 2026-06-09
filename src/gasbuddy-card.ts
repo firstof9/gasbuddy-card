@@ -1177,6 +1177,27 @@ export class GasBuddyCard extends LitElement {
   name: 'GasBuddy Card',
   preview: true,
   description: 'A premium Home Assistant custom card for GasBuddy integration gas prices and EV stations.',
+  getEntitySuggestion: (hass: any, entityId: string) => {
+    const stateObj = hass.states[entityId];
+    const isGasbuddy =
+      entityId.startsWith('sensor.') &&
+      stateObj?.attributes &&
+      (stateObj.attributes.attribution?.toLowerCase().includes('gasbuddy') ||
+        entityId.toLowerCase().includes('gasbuddy'));
+
+    if (!isGasbuddy) {
+      return null;
+    }
+
+    const deviceId = hass.entities?.[entityId]?.device_id || '';
+    return {
+      config: {
+        type: 'custom:gasbuddy-card',
+        device_id: deviceId,
+        default_mode: 'gas',
+      },
+    };
+  },
 });
 
 const CARD_VERSION = 'VERSION';
