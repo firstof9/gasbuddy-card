@@ -602,7 +602,7 @@ export class GasBuddyCard extends LitElement {
     const meta = this._collectStationMetadata(entities);
 
     return html`
-      <ha-card>
+      <ha-card class="${this._config.compact ? 'compact' : ''}">
         ${this._renderHeader(meta, currentTab, entities.ev_network)}
         ${hasGas && hasEV ? this._renderTabs(currentTab) : ''}
         ${hasGas && hasEV
@@ -877,6 +877,10 @@ export class GasBuddyCard extends LitElement {
       activeGrades = activeGrades.filter((g) => this._config!.show_fuel_types!.includes(g.key));
     }
 
+    if (this._config?.compact) {
+      return this._renderGasContentCompact(entities, activeGrades);
+    }
+
     return html`
       <div class="gas-grid ${activeGrades.length === 1 ? 'gas-grid--single' : ''}">
         ${activeGrades.map((grade) => {
@@ -984,6 +988,93 @@ export class GasBuddyCard extends LitElement {
                     `}
               </div>
               ${this._renderTrendTooltip(actionEntityId, creditUnit || dealUnit, cashUnit)}
+            </div>
+          `;
+        })}
+      </div>
+    `;
+  }
+
+  private _renderGasContentCompact(
+    entities: ResolvedEntities,
+    activeGrades: { key: EntityKey; name: string; cashKey: EntityKey; dealKey: EntityKey }[],
+  ): TemplateResult {
+    return html`
+      <div class="gas-list">
+        ${activeGrades.map((grade) => {
+          const creditEntityId = entities[grade.key];
+          const cashEntityId = entities[grade.cashKey];
+          const dealEntityId = entities[grade.dealKey];
+
+          const creditState = creditEntityId ? this.hass!.states[creditEntityId] : undefined;
+          const cashState = cashEntityId ? this.hass!.states[cashEntityId] : undefined;
+          const dealState = dealEntityId ? this.hass!.states[dealEntityId] : undefined;
+
+          const creditUnit = creditState?.attributes?.unit_of_measurement as string | undefined;
+          const cashUnit = cashState?.attributes?.unit_of_measurement as string | undefined;
+          const dealUnit = dealState?.attributes?.unit_of_measurement as string | undefined;
+
+          const creditPriceStr = creditState ? formatPrice(creditState.state, creditUnit) : '';
+          const cashPriceStr = cashState ? formatPrice(cashState.state, cashUnit) : '';
+          const dealPriceStr = dealState ? formatPrice(dealState.state, dealUnit) : '';
+
+          const hasMainPrice = !!(creditPriceStr || cashPriceStr);
+          const displayPrice = hasMainPrice ? (creditPriceStr || cashPriceStr) : (dealPriceStr || '-');
+          const hasBothMain = creditPriceStr && cashPriceStr && creditPriceStr !== cashPriceStr;
+
+          const actionEntityId = creditEntityId || cashEntityId || dealEntityId;
+          const interactive = this._isPriceCardInteractive(actionEntityId);
+
+          let ariaLabel = `${grade.name} price: `;
+          if (creditPriceStr && cashPriceStr) {
+            ariaLabel += `${creditPriceStr} ${t(this.hass, 'price_credit')}, ${cashPriceStr} ${t(this.hass, 'price_cash')}`;
+          } else {
+            ariaLabel += `${displayPrice} ${creditPriceStr ? t(this.hass, 'price_credit') : (cashPriceStr ? t(this.hass, 'price_cash') : t(this.hass, 'price_deal'))}`;
+          }
+          if (hasMainPrice && dealPriceStr) {
+            ariaLabel += `, ${t(this.hass, 'price_deal')} price is ${dealPriceStr}`;
+          }
+
+          return html`
+            <div
+              class="gas-list-row ${interactive ? 'gas-list-row--interactive' : ''}"
+              role="${interactive ? 'button' : 'group'}"
+              tabindex="${interactive ? '0' : '-1'}"
+              aria-label="${ariaLabel}"
+              @pointerdown=${(ev: PointerEvent) => this._onPriceCardPointerDown(actionEntityId, ev)}
+              @pointermove=${(ev: PointerEvent) => this._onPriceCardPointerMoveCancelHold(ev)}
+              @pointerup=${(ev: PointerEvent) => this._onPriceCardPointerUp(actionEntityId, ev)}
+              @pointercancel=${() => this._onPriceCardPointerCancel()}
+              @keydown=${(ev: KeyboardEvent) => this._onPriceCardKeydown(actionEntityId, ev)}
+            >
+              <div class="gas-list-row-left">
+                <span class="fuel-type-compact">${grade.name}</span>
+              </div>
+              <div class="gas-list-row-center">
+                ${hasMainPrice
+                  ? (hasBothMain
+                      ? html`
+                          <div class="dual-prices-compact">
+                            <span class="fuel-price-compact">${creditPriceStr} <span class="price-label-compact">${t(this.hass, 'price_credit')}</span></span>
+                            <span class="price-separator-compact">/</span>
+                            <span class="fuel-price-compact">${cashPriceStr} <span class="price-label-compact">${t(this.hass, 'price_cash')}</span></span>
+                          </div>
+                        `
+                      : html`
+                          <span class="fuel-price-compact">${displayPrice} <span class="price-label-compact">${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')}</span></span>
+                        `)
+                  : html`
+                      <span class="fuel-price-compact">${displayPrice} <span class="price-label-compact">${t(this.hass, 'price_deal')}</span></span>
+                    `}
+                ${dealPriceStr && hasMainPrice
+                  ? html`
+                      <span class="deal-badge-compact">${t(this.hass, 'price_deal')}: ${dealPriceStr}</span>
+                    `
+                  : ''}
+              </div>
+              <div class="gas-list-row-right">
+                ${this._renderTrendIndicator(actionEntityId)}
+              </div>
             </div>
           `;
         })}

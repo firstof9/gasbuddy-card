@@ -122,6 +122,7 @@ ev_cards_accepted_entity: sensor.other_ev_payment_methods
 | `device_id` | string | **Required** | The device registry ID of the GasBuddy station. |
 | `title` | string | Optional | Custom title header of the card. |
 | `default_mode` | `"gas"` \| `"ev"` | `"gas"` | Which tab the card opens on when both gas and EV data are present. |
+| `compact` | boolean | `false` | Enable a dense, space-saving list layout optimized for mobile screens (iPhone) and dashboard sidebars. |
 | `show_trend` | boolean | `false` | Render a background price-history sparkline behind each fuel grade. |
 | `trend_hours` | number | `168` | Hours of history to plot when `show_trend` is on. Range 1–720. |
 | `show_trend_indicator` | boolean | `false` | Show an inline ▲ / ▼ / ≈ + percent change beside each price. |

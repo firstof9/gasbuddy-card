@@ -645,4 +645,259 @@ export const cardStyles = css`
       --gasbuddy-brand-logo-border: var(--divider-color, rgba(255, 255, 255, 0.12));
     }
   }
+
+  /* Compact Mode Styles */
+  ha-card.compact {
+    padding: 8px 12px;
+  }
+
+  .compact .header {
+    margin-bottom: 6px;
+    align-items: center;
+  }
+
+  .compact .title {
+    font-size: 14px;
+  }
+
+  .compact .subtitle {
+    display: none; /* Hide address subtitle in compact mode */
+  }
+
+  .compact .brand-logo {
+    height: 24px;
+    min-width: 24px;
+    max-width: 48px;
+    padding: 0 2px;
+    margin-left: 8px;
+  }
+
+  .compact .brand-logo ha-icon {
+    --mdc-icon-size: 16px;
+  }
+
+  .compact .network-svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .compact .network-pill {
+    padding: 2px 6px;
+    font-size: 8px;
+  }
+
+  .compact .tabs {
+    margin-bottom: 8px;
+    gap: 4px;
+  }
+
+  .compact .tab {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  /* Compact Gas List Layout */
+  .gas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .gas-list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background: var(--ha-card-background, var(--card-background-color, rgba(255, 255, 255, 0.02)));
+    border: 1px solid var(--ha-card-border-color, var(--divider-color, rgba(0, 0, 0, 0.08)));
+    border-left: 3px solid var(--gasbuddy-brand-color, var(--accent-color));
+    border-radius: 6px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    gap: 8px;
+  }
+
+  .gas-list-row--interactive {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+  }
+
+  .gas-list-row--interactive:hover {
+    background: rgba(var(--rgb-primary-color, 33, 150, 243), 0.08);
+    transform: translateX(2px);
+  }
+
+  .gas-list-row--interactive:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 1px;
+  }
+
+  .gas-list-row-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .fuel-type-compact {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary-text-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .gas-list-row-center {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 2;
+  }
+
+  .dual-prices-compact {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .fuel-price-compact {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary-text-color);
+    white-space: nowrap;
+  }
+
+  .price-label-compact {
+    font-size: 8px;
+    color: var(--secondary-text-color);
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-left: 2px;
+  }
+
+  .price-separator-compact {
+    font-size: 12px;
+    color: var(--secondary-text-color);
+    opacity: 0.5;
+  }
+
+  .deal-badge-compact {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(var(--rgb-success-color, 76, 175, 80), 0.12);
+    color: var(--success-color, #4caf50);
+    border: 1px solid rgba(var(--rgb-success-color, 76, 175, 80), 0.25);
+    border-radius: 4px;
+    padding: 1px 4px;
+    font-size: 8px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .gas-list-row-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 45px;
+    flex-shrink: 0;
+  }
+
+  .compact .trend-indicator {
+    padding: 1px 4px;
+    font-size: 8px;
+    border-radius: 4px;
+  }
+
+  .compact .trend-indicator-icon {
+    --mdc-icon-size: 10px;
+  }
+
+  /* Compact EV styles */
+  .compact .charger-summary {
+    gap: 6px;
+  }
+
+  .compact .charger-badge {
+    padding: 6px 8px;
+    gap: 6px;
+    border-radius: 6px;
+  }
+
+  .compact .charger-badge ha-icon {
+    --mdc-icon-size: 20px;
+  }
+
+  .compact .charger-count {
+    font-size: 14px;
+  }
+
+  .compact .charger-label {
+    font-size: 9px;
+  }
+
+  .compact .connector-section-title {
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+
+  .compact .connectors-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 4px;
+  }
+
+  .compact .connector-card {
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  .compact .connector-name {
+    font-size: 9px;
+  }
+
+  .compact .connector-count {
+    font-size: 11px;
+  }
+
+  .compact .connector-power {
+    font-size: 8px;
+  }
+
+  .compact .metadata-list {
+    gap: 4px;
+    padding-top: 6px;
+  }
+
+  .compact .metadata-item {
+    font-size: 11px;
+  }
+
+  .compact .payment-card-icon {
+    width: 30px;
+    height: 20px;
+  }
+
+  /* Compact Footer Styles */
+  .compact .footer {
+    margin-top: 8px;
+    padding-top: 4px;
+    border-top: none;
+    font-size: 9px;
+    opacity: 0.6;
+  }
+
+  .compact .last-updated-chip {
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+
+  .compact .last-updated-chip ha-icon {
+    display: none;
+  }
 `;
