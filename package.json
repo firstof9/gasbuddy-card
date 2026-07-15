@@ -15,12 +15,12 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.0",
     "@rollup/plugin-terser": "^1.0.0",
-    "@rollup/plugin-typescript": "^12.1.0",
-    "@types/node": "^26.1.1",
-    "rollup": "^4.62.2",
+    "rollup-plugin-esbuild": "^6.2.0",
+    "@types/node": "^25.9.2",
+    "rollup": "^4.61.1",
     "tslib": "^2.6.0",
-    "tsx": "^4.23.0",
-    "typescript": "^6.0.3",
+    "tsx": "^4.22.4",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   },
   "dependencies": {

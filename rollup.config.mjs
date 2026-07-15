@@ -1,4 +1,4 @@
-import typescript from '@rollup/plugin-typescript';
+import esbuild from 'rollup-plugin-esbuild';
 import resolve from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
 
@@ -13,9 +13,9 @@ export default {
   },
   plugins: [
     resolve(),
-    typescript({
+    esbuild({
       tsconfig: './tsconfig.json',
-      compilerOptions: { noEmit: false, declaration: false },
+      target: 'es2022',
     }),
     !dev && terser({ format: { comments: false } }),
     {
