@@ -23,6 +23,7 @@ const ENTITY_SUFFIXES: ReadonlyArray<readonly [string, readonly string[]]> = [
   ['e15_cash', ['_unl88_cash', '_e15_gas_cash', '_e15_cash']],
   ['e15_deal', ['_unl88_deal', '_e15_gas_deal', '_e15_deal']],
   ['last_updated', ['_last_updated']],
+  ['station_name', ['_station_name']],
   ['ev_level1', ['_ev_level_1_chargers', '_ev_level1']],
   ['ev_level2', ['_ev_level_2_chargers', '_ev_level2']],
   ['ev_dc_fast', ['_ev_dc_fast_chargers', '_ev_dc_fast']],

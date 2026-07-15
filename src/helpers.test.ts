@@ -194,6 +194,16 @@ describe('findDeviceEntities', () => {
     expect(mapped.regular_gas_deal).toBe('sensor.x_regular_gas_deal');
     expect(mapped.e15_deal).toBe('sensor.x_unl88_deal');
   });
+
+  it('handles the station_name variant', () => {
+    const hass = buildHass({
+      entities: {
+        'sensor.cheapest_gas_station_name': { entity_id: 'sensor.cheapest_gas_station_name', device_id: 'dev1' },
+      },
+    });
+    const mapped = findDeviceEntities(hass, 'dev1');
+    expect(mapped.station_name).toBe('sensor.cheapest_gas_station_name');
+  });
 });
 
 describe('getNetworkColor', () => {

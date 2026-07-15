@@ -96,6 +96,7 @@ export interface GasBuddyCardConfig {
   e15_cash_entity?: string;
   e15_deal_entity?: string;
   last_updated_entity?: string;
+  station_name_entity?: string;
 
   // EV charging overrides
   ev_level1_entity?: string;
