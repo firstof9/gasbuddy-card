@@ -41,6 +41,7 @@ const ENTITY_KEYS = [
   'ev_nacs', 'ev_nacs_power',
   'ev_status', 'ev_network', 'ev_pricing',
   'ev_access_hours', 'ev_cards_accepted', 'ev_date_last_confirmed',
+  'station_name',
 ] as const;
 
 type EntityKey = (typeof ENTITY_KEYS)[number];
@@ -537,6 +538,13 @@ export class GasBuddyCard extends LitElement {
       }
       if (typeof attrs.longitude === 'number' && longitude === undefined) {
         longitude = attrs.longitude;
+      }
+    }
+
+    if (name === defaultStationName && entities.station_name) {
+      const stateObj = this.hass!.states[entities.station_name];
+      if (stateObj && stateObj.state && stateObj.state !== 'unknown' && stateObj.state !== 'unavailable') {
+        name = stateObj.state;
       }
     }
 

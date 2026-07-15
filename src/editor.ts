@@ -183,6 +183,7 @@ export class GasBuddyCardEditor extends LitElement {
           sensorOverride('e15_cash', 'E15 / UNL88 (Cash)'),
           sensorOverride('e15_deal', 'E15 / UNL88 (Deal)'),
           sensorOverride('last_updated', 'Last Updated'),
+          sensorOverride('station_name', 'Station Name'),
         ],
       },
       // ── EV charger overrides ─────────────────────────────────
