@@ -429,6 +429,33 @@ describe('generateSparklinePaths', () => {
     const { stroke } = generateSparklinePaths(history);
     expect(stroke).toBe('M 0.0,40.0 C 20.0,34.0 80.0,16.0 100.0,10.0');
   });
+
+  it('prevents graph loops when data points have uneven time deltas and sharp price drops', () => {
+    const history = [
+      { s: '3.50', t: 1000 },
+      { s: '3.50', t: 2000 },
+      { s: '3.00', t: 2010 }, // 10s later, steep drop
+      { s: '3.00', t: 3000 },
+    ];
+    const { stroke } = generateSparklinePaths(history);
+
+    // Extract control points from SVG path command "C cp1X,cp1Y cp2X,cp2Y endX,endY"
+    const cMatches = [...stroke.matchAll(/C\s+([\d.-]+),([\d.-]+)\s+([\d.-]+),([\d.-]+)\s+([\d.-]+),([\d.-]+)/g)];
+    expect(cMatches.length).toBe(3);
+
+    // Check segment 1 -> 2 (index 1), where t=2000 (x=50) to t=2010 (x=50.5)
+    const [, cp1XStr, , cp2XStr, , endXStr] = cMatches[1];
+    const cp1X = parseFloat(cp1XStr);
+    const cp2X = parseFloat(cp2XStr);
+    const endX = parseFloat(endXStr);
+
+    // Control point X values must be strictly between start X (50) and end X (50.5) to avoid loops
+    expect(cp1X).toBeGreaterThanOrEqual(50);
+    expect(cp1X).toBeLessThanOrEqual(endX);
+    expect(cp2X).toBeGreaterThanOrEqual(50);
+    expect(cp2X).toBeLessThanOrEqual(endX);
+    expect(cp1X).toBeLessThanOrEqual(cp2X);
+  });
 });
 
 describe('computePriceTrend', () => {
