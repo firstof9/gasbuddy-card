@@ -570,40 +570,47 @@ export function generateSparklinePaths(
     return { x, y };
   });
 
+  // Calculate slope m_i (dy/dx) at each point i for time-series function plot y(x)
+  const slopes: number[] = [];
+  const n = coords.length;
+  for (let i = 0; i < n; i++) {
+    if (i === 0) {
+      const dx = coords[1].x - coords[0].x;
+      slopes.push(dx > 0 ? (coords[1].y - coords[0].y) / dx : 0);
+    } else if (i === n - 1) {
+      const dx = coords[n - 1].x - coords[n - 2].x;
+      slopes.push(dx > 0 ? (coords[n - 1].y - coords[n - 2].y) / dx : 0);
+    } else {
+      const dyPrev = coords[i].y - coords[i - 1].y;
+      const dyNext = coords[i + 1].y - coords[i].y;
+      // Local peak or trough: flatten slope to avoid vertical overshoots
+      if ((dyPrev > 0 && dyNext < 0) || (dyPrev < 0 && dyNext > 0)) {
+        slopes.push(0);
+      } else {
+        const dxSpan = coords[i + 1].x - coords[i - 1].x;
+        const dySpan = coords[i + 1].y - coords[i - 1].y;
+        slopes.push(dxSpan > 0 ? dySpan / dxSpan : 0);
+      }
+    }
+  }
+
   const strokeSegments: string[] = [];
   strokeSegments.push(`M ${coords[0].x.toFixed(1)},${coords[0].y.toFixed(1)}`);
 
-  const controlPoint = (
-    current: { x: number; y: number },
-    previous: { x: number; y: number } | undefined,
-    next: { x: number; y: number } | undefined,
-    isEnd: boolean,
-  ) => {
-    const p = previous || current;
-    const n = next || current;
-    
-    // Angle of the tangent is determined by the vector from previous to next
-    const tangentX = n.x - p.x;
-    const tangentY = n.y - p.y;
-    const angle = Math.atan2(tangentY, tangentX);
-    
-    // Distance is calculated from the adjacent point in the current segment
-    const adjacent = isEnd ? p : n;
-    const dx = adjacent.x - current.x;
-    const dy = adjacent.y - current.y;
-    const segmentLength = Math.sqrt(dx * dx + dy * dy);
-    
-    const smoothing = 0.2;
-    const dist = segmentLength * smoothing;
-    
-    const cx = current.x + Math.cos(angle + (isEnd ? Math.PI : 0)) * dist;
-    const cy = current.y + Math.sin(angle + (isEnd ? Math.PI : 0)) * dist;
-    return { x: cx, y: cy };
-  };
+  const smoothing = 0.2;
+  for (let i = 0; i < n - 1; i++) {
+    const dxSeg = coords[i + 1].x - coords[i].x;
+    const len = dxSeg * smoothing;
 
-  for (let i = 0; i < coords.length - 1; i++) {
-    const cp1 = controlPoint(coords[i], coords[i - 1], coords[i + 1], false);
-    const cp2 = controlPoint(coords[i + 1], coords[i], coords[i + 2], true);
+    const cp1 = {
+      x: coords[i].x + len,
+      y: coords[i].y + slopes[i] * len,
+    };
+    const cp2 = {
+      x: coords[i + 1].x - len,
+      y: coords[i + 1].y - slopes[i + 1] * len,
+    };
+
     strokeSegments.push(
       `C ${cp1.x.toFixed(1)},${cp1.y.toFixed(1)} ${cp2.x.toFixed(1)},${cp2.y.toFixed(1)} ${coords[i + 1].x.toFixed(1)},${coords[i + 1].y.toFixed(1)}`
     );
