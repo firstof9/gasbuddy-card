@@ -17,7 +17,7 @@
     "@rollup/plugin-terser": "^1.0.0",
     "rollup-plugin-esbuild": "^6.2.0",
     "@types/node": "^26.4.0",
-    "rollup": "^4.62.4",
+    "rollup": "^4.63.0",
     "tslib": "^2.6.0",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2",
