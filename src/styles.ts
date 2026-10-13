@@ -227,6 +227,16 @@ export const cardStyles = css`
     touch-action: manipulation;
   }
 
+  .price-card--unavailable {
+    opacity: 0.75;
+  }
+
+  .fuel-price--unavailable {
+    color: var(--secondary-text-color);
+    font-size: 26px;
+    letter-spacing: normal;
+  }
+
   .price-card--interactive:focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
@@ -771,6 +781,11 @@ export const cardStyles = css`
     font-weight: 600;
     color: var(--primary-text-color);
     white-space: nowrap;
+  }
+
+  .fuel-price-compact--unavailable {
+    color: var(--secondary-text-color);
+    font-weight: 500;
   }
 
   .price-label-compact {
