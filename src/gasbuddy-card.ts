@@ -592,16 +592,6 @@ export class GasBuddyCard extends LitElement {
     const hasGas = GAS_AVAILABILITY_KEYS.some((k) => this._isAvailable(entities[k]));
     const hasEV = EV_AVAILABILITY_KEYS.some((k) => this._isAvailable(entities[k]));
 
-    if (!hasGas && !hasEV) {
-      return html`
-        <ha-card>
-          <div class="card-message card-message--info">
-            ${t(this.hass, 'no_active_sensors')}
-          </div>
-        </ha-card>
-      `;
-    }
-
     // Auto-force the active tab when only one mode is available.
     let currentTab = this._activeTab;
     if (hasGas && !hasEV) currentTab = 'gas';
@@ -881,6 +871,10 @@ export class GasBuddyCard extends LitElement {
       return ok(creditState) || ok(cashState) || ok(dealState);
     });
 
+    if (activeGrades.length === 0) {
+      activeGrades = fuelGrades;
+    }
+
     if (this._config?.show_fuel_types && this._config.show_fuel_types.length > 0) {
       activeGrades = activeGrades.filter((g) => this._config!.show_fuel_types!.includes(g.key));
     }
@@ -908,8 +902,11 @@ export class GasBuddyCard extends LitElement {
           const cashPriceStr = cashState ? formatPrice(cashState.state, cashUnit) : '';
           const dealPriceStr = dealState ? formatPrice(dealState.state, dealUnit) : '';
 
+          const hasAnyPrice = !!(creditPriceStr || cashPriceStr || dealPriceStr);
           const hasMainPrice = !!(creditPriceStr || cashPriceStr);
-          const displayPrice = hasMainPrice ? (creditPriceStr || cashPriceStr) : (dealPriceStr || '-');
+          const displayPrice = hasMainPrice
+            ? (creditPriceStr || cashPriceStr)
+            : (dealPriceStr || (hasAnyPrice ? '-' : 'N/A'));
           const hasBothMain = creditPriceStr && cashPriceStr && creditPriceStr !== cashPriceStr;
           const showPill = hasMainPrice && !!dealPriceStr;
 
@@ -923,7 +920,9 @@ export class GasBuddyCard extends LitElement {
           const interactive = this._isPriceCardInteractive(actionEntityId);
 
           let ariaLabel = `${grade.name} price: `;
-          if (creditPriceStr && cashPriceStr) {
+          if (!hasAnyPrice) {
+            ariaLabel += 'Not available';
+          } else if (creditPriceStr && cashPriceStr) {
             ariaLabel += `${creditPriceStr} ${t(this.hass, 'price_credit')}, ${cashPriceStr} ${t(this.hass, 'price_cash')}`;
           } else {
             ariaLabel += `${displayPrice} ${creditPriceStr ? t(this.hass, 'price_credit') : (cashPriceStr ? t(this.hass, 'price_cash') : t(this.hass, 'price_deal'))}`;
@@ -934,7 +933,7 @@ export class GasBuddyCard extends LitElement {
 
           return html`
             <div
-              class="price-card ${interactive ? 'price-card--interactive' : ''}"
+              class="price-card ${interactive ? 'price-card--interactive' : ''} ${!hasAnyPrice ? 'price-card--unavailable' : ''}"
               role="${interactive ? 'button' : 'group'}"
               tabindex="${interactive ? '0' : '-1'}"
               aria-label="${ariaLabel}"
@@ -985,7 +984,8 @@ export class GasBuddyCard extends LitElement {
                           <div class="price-meta">${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')} · ${unit || 'USD'}</div>
                           ${showPill ? html`<div class="deal-badge">${t(this.hass, 'price_deal')}: ${dealPriceStr}</div>` : ''}
                         `)
-                  : html`
+                  : hasAnyPrice
+                  ? html`
                       <div class="price-card-header">
                         <span class="fuel-type">${grade.name}</span>
                         ${this._renderTrendIndicator(dealEntityId)}
@@ -993,6 +993,13 @@ export class GasBuddyCard extends LitElement {
                       <span class="fuel-price">${displayPrice}</span>
                       <div class="price-meta">${t(this.hass, 'price_deal')} · ${unit || 'USD'}</div>
                       ${showPill ? html`<div class="deal-badge">${t(this.hass, 'price_deal')}: ${dealPriceStr}</div>` : ''}
+                    `
+                  : html`
+                      <div class="price-card-header">
+                        <span class="fuel-type">${grade.name}</span>
+                      </div>
+                      <span class="fuel-price fuel-price--unavailable">N/A</span>
+                      <div class="price-meta">${unit || 'USD'}</div>
                     `}
               </div>
               ${this._renderTrendTooltip(actionEntityId, creditUnit || dealUnit, cashUnit)}
@@ -1026,15 +1033,20 @@ export class GasBuddyCard extends LitElement {
           const cashPriceStr = cashState ? formatPrice(cashState.state, cashUnit) : '';
           const dealPriceStr = dealState ? formatPrice(dealState.state, dealUnit) : '';
 
+          const hasAnyPrice = !!(creditPriceStr || cashPriceStr || dealPriceStr);
           const hasMainPrice = !!(creditPriceStr || cashPriceStr);
-          const displayPrice = hasMainPrice ? (creditPriceStr || cashPriceStr) : (dealPriceStr || '-');
+          const displayPrice = hasMainPrice
+            ? (creditPriceStr || cashPriceStr)
+            : (dealPriceStr || (hasAnyPrice ? '-' : 'N/A'));
           const hasBothMain = creditPriceStr && cashPriceStr && creditPriceStr !== cashPriceStr;
 
           const actionEntityId = creditEntityId || cashEntityId || dealEntityId;
           const interactive = this._isPriceCardInteractive(actionEntityId);
 
           let ariaLabel = `${grade.name} price: `;
-          if (creditPriceStr && cashPriceStr) {
+          if (!hasAnyPrice) {
+            ariaLabel += 'Not available';
+          } else if (creditPriceStr && cashPriceStr) {
             ariaLabel += `${creditPriceStr} ${t(this.hass, 'price_credit')}, ${cashPriceStr} ${t(this.hass, 'price_cash')}`;
           } else {
             ariaLabel += `${displayPrice} ${creditPriceStr ? t(this.hass, 'price_credit') : (cashPriceStr ? t(this.hass, 'price_cash') : t(this.hass, 'price_deal'))}`;
@@ -1071,8 +1083,12 @@ export class GasBuddyCard extends LitElement {
                       : html`
                           <span class="fuel-price-compact">${displayPrice} <span class="price-label-compact">${creditPriceStr ? t(this.hass, 'price_credit') : t(this.hass, 'price_cash')}</span></span>
                         `)
-                  : html`
+                  : hasAnyPrice
+                  ? html`
                       <span class="fuel-price-compact">${displayPrice} <span class="price-label-compact">${t(this.hass, 'price_deal')}</span></span>
+                    `
+                  : html`
+                      <span class="fuel-price-compact fuel-price-compact--unavailable">N/A</span>
                     `}
                 ${dealPriceStr && hasMainPrice
                   ? html`
