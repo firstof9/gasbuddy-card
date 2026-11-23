@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GasBuddy Card — Home Assistant Custom Card</title>
+  <meta name="description" content="Interactive demo and documentation for gasbuddy-card — a custom Home Assistant Lovelace card for GasBuddy fuel prices and EV charging stations." />
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #181b24;
+      --surface-2: #222634;
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --accent: #03a9f4;
+      --accent-soft: rgba(3, 169, 244, 0.15);
+      --code-bg: #12141c;
+      --ha-card-background: #1c1c1c;
+      --card-background-color: #1c1c1c;
+      --secondary-background-color: #252836;
+      --primary-text-color: #ffffff;
+      --secondary-text-color: #9e9e9e;
+      --primary-color: #03a9f4;
+      --accent-color: #03a9f4;
+      --divider-color: #333333;
+      --success-color: #4caf50;
+      --warning-color: #ff9800;
+      --error-color: #f44336;
+      --ha-card-border-radius: 12px;
+      --ha-card-border-width: 1px;
+      --ha-card-border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    [data-theme="light"] {
+      --bg: #f4f6fa;
+      --surface: #ffffff;
+      --surface-2: #eef1f7;
+      --border: rgba(0, 0, 0, 0.1);
+      --text: #111827;
+      --muted: #4b5563;
+      --code-bg: #f8fafc;
+      --ha-card-background: #ffffff;
+      --card-background-color: #ffffff;
+      --secondary-background-color: #f3f4f6;
+      --primary-text-color: #111827;
+      --secondary-text-color: #6b7280;
+      --divider-color: #d1d5db;
+      --ha-card-border-color: rgba(0, 0, 0, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(10px);
+    }
+
+    .nav {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0.9rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: inline-block;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.92rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .btn:hover { border-color: var(--accent); text-decoration: none; }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+    .btn-primary:hover { opacity: 0.92; }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    .hero {
+      text-align: center;
+      max-width: 760px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.9rem, 4vw, 2.75rem);
+      margin: 0 0 0.75rem;
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin: 0 0 1.25rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    section { margin-top: 3rem; }
+    section h2 {
+      font-size: 1.45rem;
+      margin: 0 0 1rem;
+      letter-spacing: -0.01em;
+    }
+
+    .demo-shell {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .tab {
+      padding: 0.4rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 1.15fr) minmax(280px, 0.85fr);
+      gap: 1.25rem;
+      align-items: start;
+    }
+
+    @media (max-width: 820px) {
+      .demo-grid { grid-template-columns: 1fr; }
+    }
+
+    .preview-stage {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      min-height: 240px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .state-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .state-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+    .pill {
+      padding: 0.28rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .pill.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    #card-mount {
+      width: 100%;
+    }
+
+    .yaml-panel {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .yaml-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    pre {
+      margin: 0;
+      padding: 0.9rem;
+      overflow-x: auto;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.15rem;
+    }
+
+    .info-card h3 { margin: 0 0 0.45rem; font-size: 1.02rem; }
+    .info-card p, .info-card ol { margin: 0; color: var(--muted); font-size: 0.92rem; }
+    .info-card ol { padding-left: 1.2rem; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 0.92rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.7rem 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th { background: var(--surface-2); font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+
+    code {
+      background: var(--surface-2);
+      padding: 0.12rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.86em;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 1.75rem 1.25rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand"><span class="brand-dot"></span> GasBuddy Card</div>
+      <div class="nav-links">
+        <a href="#demo">Live Demo</a>
+        <a href="#install">Install</a>
+        <a href="#options">Options</a>
+        <a href="https://github.com/firstof9/gasbuddy-card" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn" id="theme-toggle" type="button">Light Theme</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="hero">
+      <h1>GasBuddy Card for Home Assistant</h1>
+      <p>Display live fuel prices, cash &amp; deal discounts, 7-day price trend graphs, and EV charging station availability from the <a href="https://github.com/firstof9/ha-gasbuddy" target="_blank" rel="noopener">GasBuddy custom integration</a>.</p>
+      <div class="hero-actions">
+        <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=firstof9&repository=gasbuddy-card&category=plugin" target="_blank" rel="noopener">
+          <img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open in Home Assistant HACS" />
+        </a>
+        <a class="btn btn-primary" href="#demo">Try Interactive Demo</a>
+        <a class="btn" href="https://github.com/firstof9/gasbuddy-card/releases/latest" target="_blank" rel="noopener">Latest Release</a>
+      </div>
+    </div>
+
+    <section id="demo">
+      <h2>Interactive Live Demo</h2>
+      <div class="demo-shell">
+        <div class="tabs" id="preset-tabs" role="tablist"></div>
+        <div class="demo-grid">
+          <div class="preview-stage">
+            <div class="state-controls">
+              <div class="state-pills" id="state-pills"></div>
+              <span style="font-size:0.78rem;color:var(--muted);">Rendered live by <code>&lt;gasbuddy-card&gt;</code></span>
+            </div>
+            <div id="card-mount"></div>
+          </div>
+          <div class="yaml-panel">
+            <div class="yaml-header">
+              <span>Card YAML Configuration</span>
+              <button class="btn" id="copy-yaml" type="button" style="padding:0.25rem 0.6rem;font-size:0.78rem;">Copy</button>
+            </div>
+            <pre id="yaml-code"></pre>
+          </div>
+        </div>
+        <p style="margin:0.9rem 0 0;font-size:0.84rem;color:var(--muted);">
+          <strong>Note:</strong> These previews use simulated station states, recorder history, and standalone element shims for demonstration purposes. Icons and theme variables render with full fidelity inside Home Assistant.
+        </p>
+      </div>
+    </section>
+
+    <section id="install">
+      <h2>Installation</h2>
+      <div class="cards-grid">
+        <div class="info-card">
+          <h3>HACS (Recommended)</h3>
+          <ol>
+            <li>Click the Home Assistant badge above, or open <strong>HACS</strong> in Home Assistant.</li>
+            <li>Open the menu (three dots) &rarr; <strong>Custom repositories</strong>.</li>
+            <li>Add <code>https://github.com/firstof9/gasbuddy-card</code> with category <strong>Dashboard</strong>.</li>
+            <li>Download <strong>GasBuddy Card</strong> and add <code>custom:gasbuddy-card</code> via the Visual Editor.</li>
+          </ol>
+        </div>
+        <div class="info-card">
+          <h3>Manual</h3>
+          <ol>
+            <li>Download <code>gasbuddy-card.js</code> from the <a href="https://github.com/firstof9/gasbuddy-card/releases/latest" target="_blank" rel="noopener">latest release</a>.</li>
+            <li>Copy it to <code>&lt;config&gt;/www/gasbuddy-card.js</code>.</li>
+            <li>Register <code>/local/gasbuddy-card.js</code> as a JavaScript module under <strong>Settings &rarr; Dashboards &rarr; Resources</strong>.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="options">
+      <h2>Configuration Options</h2>
+      <table>
+        <thead>
+          <tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>type</code></td><td>string</td><td>Required</td><td>Must be <code>custom:gasbuddy-card</code>.</td></tr>
+          <tr><td><code>device_id</code></td><td>string</td><td>Required</td><td>Device registry ID of the GasBuddy station.</td></tr>
+          <tr><td><code>title</code></td><td>string</td><td>Auto</td><td>Custom title override for the card header.</td></tr>
+          <tr><td><code>default_mode</code></td><td><code>"gas"</code> | <code>"ev"</code></td><td><code>"gas"</code></td><td>Initial tab when both gas and EV data are present.</td></tr>
+          <tr><td><code>compact</code></td><td>boolean</td><td><code>false</code></td><td>Dense, space-saving layout for mobile screens and sidebars.</td></tr>
+          <tr><td><code>show_trend</code></td><td>boolean</td><td><code>false</code></td><td>Render a background price-history graph behind each fuel grade.</td></tr>
+          <tr><td><code>trend_hours</code></td><td>number</td><td><code>168</code></td><td>Hours of history to plot (1&ndash;720).</td></tr>
+          <tr><td><code>show_trend_indicator</code></td><td>boolean</td><td><code>false</code></td><td>Show an inline ▲ / ▼ / ≈ percent change chip beside each price.</td></tr>
+          <tr><td><code>trend_indicator_baseline_hours</code></td><td>number</td><td><code>24</code></td><td>Hours back to compare the current price against (1&ndash;720).</td></tr>
+          <tr><td><code>show_fuel_types</code></td><td>string[]</td><td>All</td><td>Filter which fuel grades are displayed.</td></tr>
+          <tr><td><code>tap_action</code> / <code>hold_action</code></td><td>ActionConfig</td><td><code>more-info</code> / <code>none</code></td><td>Standard Home Assistant tap and hold actions per price tile.</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <a href="https://github.com/firstof9/gasbuddy-card" target="_blank" rel="noopener">firstof9/gasbuddy-card</a> &middot; MIT License
+  </footer>
+
+  <script>
+    // Lightweight Home Assistant element shims for standalone GitHub Pages preview
+    if (!customElements.get('ha-card')) {
+      customElements.define('ha-card', class extends HTMLElement {
+        connectedCallback() {
+          this.style.display = 'block';
+          this.style.borderRadius = 'var(--ha-card-border-radius, 12px)';
+          this.style.overflow = 'hidden';
+          this.style.background = 'var(--ha-card-background, #1c1c1c)';
+          this.style.border = '1px solid var(--ha-card-border-color, rgba(255,255,255,0.1))';
+        }
+      });
+    }
+    if (!customElements.get('ha-icon')) {
+      customElements.define('ha-icon', class extends HTMLElement {
+        static get observedAttributes() { return ['icon']; }
+        connectedCallback() { this._render(); }
+        attributeChangedCallback() { this._render(); }
+        _render() {
+          const icon = this.getAttribute('icon') || '';
+          const map = {
+            'mdi:gas-station': '⛽',
+            'mdi:ev-station': '⚡',
+            'mdi:map-marker': '📍',
+            'mdi:clock-outline': '🕒',
+            'mdi:credit-card': '💳',
+            'mdi:currency-usd': '💲',
+            'mdi:lightning-bolt': '⚡',
+            'mdi:ev-plug-ccs2': '🔌',
+            'mdi:ev-plug-ccs1': '🔌',
+            'mdi:ev-plug-type1': '🔌',
+            'mdi:ev-plug-chademo': '🔌',
+            'mdi:ev-plug-tesla': '⚡',
+            'mdi:open-in-new': '↗',
+            'mdi:alert-circle-outline': '⚠️',
+            'mdi:check-circle-outline': '✓'
+          };
+          this.textContent = map[icon] || '●';
+          this.style.display = 'inline-flex';
+          this.style.alignItems = 'center';
+          this.style.justifyContent = 'center';
+          this.style.fontSize = '14px';
+        }
+      });
+    }
+  </script>
+
+  <script type="module">
+    const loadCard = async () => {
+      try {
+        await import('./gasbuddy-card.js');
+      } catch {
+        await import('../gasbuddy-card.js');
+      }
+    };
+
+    const recentIso = (minutesAgo) => new Date(Date.now() - minutesAgo * 60000).toISOString();
+
+    const makeHistory = (prices) => {
+      const nowSec = Math.floor(Date.now() / 1000);
+      const step = Math.floor((7 * 24 * 3600) / Math.max(1, prices.length - 1));
+      return prices.map((price, idx) => ({
+        s: price.toFixed(2),
+        lu: nowSec - (prices.length - 1 - idx) * step
+      }));
+    };
+
+    const buildRegistry = (deviceId, states) => {
+      const entities = {};
+      for (const entityId of Object.keys(states)) {
+        entities[entityId] = { entity_id: entityId, device_id: deviceId };
+      }
+      return entities;
+    };
+
+    const DUAL_STATES = {
+      'sensor.shell_main_st_regular_gas': {
+        state: '3.29',
+        attributes: {
+          station_name: 'Shell',
+          station_address: '1420 Main St, Denver, CO',
+          distance_miles: 0.8,
+          latitude: 39.7392,
+          longitude: -104.9903,
+          unit_of_measurement: 'USD',
+          attribution: 'Data provided by GasBuddy'
+        }
+      },
+      'sensor.shell_main_st_regular_gas_cash': { state: '3.19', attributes: { unit_of_measurement: 'USD' } },
+      'sensor.shell_main_st_regular_gas_deal': { state: '3.09', attributes: { unit_of_measurement: 'USD' } },
+      'sensor.shell_main_st_midgrade_gas': { state: '3.69', attributes: { unit_of_measurement: 'USD' } },
+      'sensor.shell_main_st_premium_gas': { state: '4.09', attributes: { unit_of_measurement: 'USD' } },
+      'sensor.shell_main_st_diesel': { state: '3.85', attributes: { unit_of_measurement: 'USD' } },
+      'sensor.shell_main_st_last_updated': { state: recentIso(14), attributes: {} },
+      'sensor.shell_main_st_ev_level_2_chargers': { state: '2', attributes: {} },
+      'sensor.shell_main_st_ev_dc_fast_chargers': { state: '6', attributes: {} },
+      'sensor.shell_main_st_ev_ccs_connectors': { state: '4', attributes: {} },
+      'sensor.shell_main_st_ev_ccs_connector_power': { state: '150 kW', attributes: {} },
+      'sensor.shell_main_st_ev_nacs_connectors': { state: '2', attributes: {} },
+      'sensor.shell_main_st_ev_nacs_connector_power': { state: '250 kW', attributes: {} },
+      'sensor.shell_main_st_ev_j1772_connectors': { state: '2', attributes: {} },
+      'sensor.shell_main_st_ev_j1772_connector_power': { state: '7.2 kW', attributes: {} },
+      'sensor.shell_main_st_ev_charging_network': { state: 'Shell Recharge', attributes: {} },
+      'sensor.shell_main_st_ev_charging_pricing': { state: '$0.42/kWh', attributes: {} },
+      'sensor.shell_main_st_ev_access_hours': { state: '24 hours daily', attributes: {} },
+      'sensor.shell_main_st_ev_station_status': { state: 'Available', attributes: {} },
+      'sensor.shell_main_st_ev_payment_accepted': { state: 'VISA, MC, AMEX, APPLE_PAY', attributes: {} },
+      'sensor.shell_main_st_ev_last_confirmed': { state: recentIso(45), attributes: {} }
+    };
+
+    const DUAL_HISTORY = {
+      'sensor.shell_main_st_regular_gas': makeHistory([3.45, 3.42, 3.39, 3.39, 3.35, 3.31, 3.29]),
+      'sensor.shell_main_st_midgrade_gas': makeHistory([3.65, 3.65, 3.67, 3.69, 3.69, 3.69, 3.69]),
+      'sensor.shell_main_st_premium_gas': makeHistory([3.95, 3.98, 4.01, 4.04, 4.05, 4.07, 4.09]),
+      'sensor.shell_main_st_diesel': makeHistory([3.99, 3.95, 3.92, 3.89, 3.88, 3.86, 3.85])
+    };
+
+    const GAS_ONLY_STATES = {
+      'sensor.costco_gas_regular_gas': {
+        state: '2.99',
+        attributes: {
+          station_name: 'Costco Gas',
+          station_address: '8686 Park Meadows Center Dr',
+          distance_miles: 2.3,
+          unit_of_measurement: 'USD',
+          attribution: 'Data provided by GasBuddy'
+        }
+      },
+      'sensor.costco_gas_premium_gas': { state: '3.59', attributes: { unit_of_measurement: 'USD' } },
+      'sensor.costco_gas_diesel': { state: '3.49', attributes: { unit_of_measurement: 'USD' } },
+      'sensor.costco_gas_e85': { state: '2.45', attributes: { unit_of_measurement: 'USD' } },
+      'sensor.costco_gas_last_updated': { state: recentIso(6), attributes: {} }
+    };
+
+    const GAS_UNAVAILABLE_STATES = {
+      'sensor.costco_gas_regular_gas': {
+        state: 'unavailable',
+        attributes: {
+          station_name: 'Costco Gas',
+          station_address: '8686 Park Meadows Center Dr',
+          distance_miles: 2.3,
+          attribution: 'Data provided by GasBuddy'
+        }
+      },
+      'sensor.costco_gas_premium_gas': { state: 'unavailable', attributes: {} },
+      'sensor.costco_gas_last_updated': { state: 'unavailable', attributes: {} }
+    };
+
+    const GAS_ONLY_HISTORY = {
+      'sensor.costco_gas_regular_gas': makeHistory([3.15, 3.12, 3.09, 3.05, 3.03, 3.01, 2.99]),
+      'sensor.costco_gas_premium_gas': makeHistory([3.69, 3.67, 3.65, 3.62, 3.61, 3.59, 3.59]),
+      'sensor.costco_gas_diesel': makeHistory([3.42, 3.44, 3.45, 3.47, 3.47, 3.48, 3.49]),
+      'sensor.costco_gas_e85': makeHistory([2.55, 2.52, 2.49, 2.49, 2.47, 2.45, 2.45])
+    };
+
+    const EV_TESLA_STATES = {
+      'sensor.tesla_sc_ev_dc_fast_chargers': {
+        state: '12',
+        attributes: {
+          station_name: 'Tesla Supercharger — Downtown',
+          station_address: '1600 Wynkoop St, Denver, CO',
+          distance_miles: 1.4,
+          attribution: 'Data provided by GasBuddy'
+        }
+      },
+      'sensor.tesla_sc_ev_nacs_connectors': { state: '12', attributes: {} },
+      'sensor.tesla_sc_ev_nacs_connector_power': { state: '250 kW', attributes: {} },
+      'sensor.tesla_sc_ev_charging_network': { state: 'Tesla', attributes: {} },
+      'sensor.tesla_sc_ev_charging_pricing': { state: '$0.36/kWh', attributes: {} },
+      'sensor.tesla_sc_ev_access_hours': { state: '24 hours daily', attributes: {} },
+      'sensor.tesla_sc_ev_station_status': { state: 'Available', attributes: {} },
+      'sensor.tesla_sc_ev_payment_accepted': { state: 'VISA, MC, AMEX, DISCOVER', attributes: {} },
+      'sensor.tesla_sc_ev_last_confirmed': { state: recentIso(18), attributes: {} }
+    };
+
+    const EV_EA_STATES = {
+      'sensor.ea_hub_ev_dc_fast_chargers': {
+        state: '8',
+        attributes: {
+          station_name: 'Electrify America — Westgate',
+          station_address: '3255 S Wadsworth Blvd',
+          distance_miles: 3.1,
+          attribution: 'Data provided by GasBuddy'
+        }
+      },
+      'sensor.ea_hub_ev_ccs_connectors': { state: '6', attributes: {} },
+      'sensor.ea_hub_ev_ccs_connector_power': { state: '350 kW', attributes: {} },
+      'sensor.ea_hub_ev_chademo_connectors': { state: '2', attributes: {} },
+      'sensor.ea_hub_ev_chademo_connector_power': { state: '50 kW', attributes: {} },
+      'sensor.ea_hub_ev_charging_network': { state: 'Electrify America', attributes: {} },
+      'sensor.ea_hub_ev_charging_pricing': { state: '$0.48/kWh', attributes: {} },
+      'sensor.ea_hub_ev_access_hours': { state: '24 hours daily', attributes: {} },
+      'sensor.ea_hub_ev_station_status': { state: 'Available', attributes: {} },
+      'sensor.ea_hub_ev_payment_accepted': { state: 'VISA, MC, AMEX, APPLE_PAY', attributes: {} },
+      'sensor.ea_hub_ev_last_confirmed': { state: recentIso(32), attributes: {} }
+    };
+
+    const PRESETS = [
+      {
+        id: 'dual',
+        label: 'Gas & EV Station',
+        variants: {
+          'Trends & Graph': {
+            config: {
+              type: 'custom:gasbuddy-card',
+              device_id: 'shell_main_st_001',
+              default_mode: 'gas',
+              show_trend: true,
+              trend_hours: 168,
+              show_trend_indicator: true,
+              trend_indicator_baseline_hours: 24
+            },
+            states: DUAL_STATES,
+            history: DUAL_HISTORY
+          },
+          'Trends Only (No Graph)': {
+            config: {
+              type: 'custom:gasbuddy-card',
+              device_id: 'shell_main_st_001',
+              default_mode: 'gas',
+              show_trend: false,
+              show_trend_indicator: true,
+              trend_indicator_baseline_hours: 24
+            },
+            states: DUAL_STATES,
+            history: DUAL_HISTORY
+          },
+          'Standard (No Trends)': {
+            config: {
+              type: 'custom:gasbuddy-card',
+              device_id: 'shell_main_st_001',
+              default_mode: 'gas'
+            },
+            states: DUAL_STATES,
+            history: DUAL_HISTORY
+          },
+          'Compact Mode': {
+            config: {
+              type: 'custom:gasbuddy-card',
+              device_id: 'shell_main_st_001',
+              compact: true,
+              show_trend: true,
+              show_trend_indicator: true
+            },
+            states: DUAL_STATES,
+            history: DUAL_HISTORY
+          },
+          'EV Tab Default': {
+            config: {
+              type: 'custom:gasbuddy-card',
+              device_id: 'shell_main_st_001',
+              default_mode: 'ev'
+            },
+            states: DUAL_STATES,
+            history: DUAL_HISTORY
+          }
+        }
+      },
+      {
+        id: 'gas_only',
+        label: 'Gas Only',
+        variants: {
+          'Trends & Graph': {
+            config: {
+              type: 'custom:gasbuddy-card',
+              device_id: 'costco_gas_002',
+              show_trend: true,
+              trend_hours: 168,
+              show_trend_indicator: true
+            },
+            states: GAS_ONLY_STATES,
+            history: GAS_ONLY_HISTORY
+          },
+          'Trends Only (No Graph)': {
+            config: {
+              type: 'custom:gasbuddy-card',
+              device_id: 'costco_gas_002',
+              show_trend: false,
+              show_trend_indicator: true
+            },
+            states: GAS_ONLY_STATES,
+            history: GAS_ONLY_HISTORY
+          },
+          'Standard (No Trends)': {
+            config: {
+              type: 'custom:gasbuddy-card',
+              device_id: 'costco_gas_002'
+            },
+            states: GAS_ONLY_STATES,
+            history: GAS_ONLY_HISTORY
+          },
+          'Compact': {
+            config: {
+              type: 'custom:gasbuddy-card',
+              device_id: 'costco_gas_002',
+              compact: true
+            },
+            states: GAS_ONLY_STATES,
+            history: GAS_ONLY_HISTORY
+          },
+          'Sensors Unavailable': {
+            config: {
+              type: 'custom:gasbuddy-card',
+              device_id: 'costco_gas_002'
+            },
+            states: GAS_UNAVAILABLE_STATES,
+            history: {}
+          }
+        }
+      },
+      {
+        id: 'ev_only',
+        label: 'EV Charging Station',
+        variants: {
+          'Tesla Supercharger': {
+            config: {
+              type: 'custom:gasbuddy-card',
+              device_id: 'tesla_sc_003',
+              default_mode: 'ev'
+            },
+            states: EV_TESLA_STATES,
+            history: {}
+          },
+          'Electrify America': {
+            config: {
+              type: 'custom:gasbuddy-card',
+              device_id: 'ea_hub_004',
+              default_mode: 'ev'
+            },
+            states: EV_EA_STATES,
+            history: {}
+          }
+        }
+      }
+    ];
+
+    const toYaml = (obj, indent = 0) => {
+      const pad = ' '.repeat(indent);
+      return Object.entries(obj).map(([k, v]) => {
+        if (Array.isArray(v)) {
+          return `${pad}${k}:\n` + v.map((item) => `${pad}  - ${item}`).join('\n');
+        }
+        if (v && typeof v === 'object') {
+          return `${pad}${k}:\n` + toYaml(v, indent + 2);
+        }
+        return `${pad}${k}: ${v}`;
+      }).join('\n');
+    };
+
+    await loadCard();
+
+    const tabsEl = document.getElementById('preset-tabs');
+    const pillsEl = document.getElementById('state-pills');
+    const mountEl = document.getElementById('card-mount');
+    const yamlEl = document.getElementById('yaml-code');
+
+    let currentPreset = PRESETS[0];
+    let currentVariantName = Object.keys(currentPreset.variants)[0];
+
+    const renderCard = () => {
+      mountEl.innerHTML = '';
+      const variant = currentPreset.variants[currentVariantName];
+      const card = document.createElement('gasbuddy-card');
+      card.setConfig(variant.config);
+      card.hass = {
+        states: variant.states,
+        entities: buildRegistry(variant.config.device_id, variant.states),
+        locale: { language: 'en' },
+        language: 'en',
+        config: { unit_system: { length: 'mi' } },
+        callService: () => Promise.resolve(),
+        localize: (k) => k,
+        connection: {
+          sendMessagePromise: (msg) => {
+            if (msg && msg.type === 'history/history_during_period') {
+              return Promise.resolve(variant.history || {});
+            }
+            return Promise.resolve({});
+          }
+        }
+      };
+      mountEl.appendChild(card);
+      yamlEl.textContent = toYaml(variant.config);
+    };
+
+    const renderPills = () => {
+      pillsEl.innerHTML = '';
+      Object.keys(currentPreset.variants).forEach((name) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pill' + (name === currentVariantName ? ' active' : '');
+        btn.textContent = name;
+        btn.onclick = () => {
+          currentVariantName = name;
+          renderPills();
+          renderCard();
+        };
+        pillsEl.appendChild(btn);
+      });
+    };
+
+    const renderTabs = () => {
+      tabsEl.innerHTML = '';
+      PRESETS.forEach((preset) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tab' + (preset.id === currentPreset.id ? ' active' : '');
+        btn.textContent = preset.label;
+        btn.onclick = () => {
+          currentPreset = preset;
+          currentVariantName = Object.keys(preset.variants)[0];
+          renderTabs();
+          renderPills();
+          renderCard();
+        };
+        tabsEl.appendChild(btn);
+      });
+    };
+
+    document.getElementById('copy-yaml').onclick = async (e) => {
+      await navigator.clipboard.writeText(yamlEl.textContent);
+      e.target.textContent = 'Copied!';
+      setTimeout(() => (e.target.textContent = 'Copy'), 1500);
+    };
+
+    document.getElementById('theme-toggle').onclick = (e) => {
+      const html = document.documentElement;
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      e.target.textContent = next === 'dark' ? 'Light Theme' : 'Dark Theme';
+    };
+
+    renderTabs();
+    renderPills();
+    renderCard();
+  </script>
+</body>
+</html>
